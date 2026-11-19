@@ -12,6 +12,7 @@ for line in open(sys.argv[1], encoding="utf-8"):
     line = line.rstrip("\n")
     if line.strip() and not line.lstrip().startswith("#"):
         pats.append(re.compile(line.partition(" => ")[0]))
+blob = re.compile(r"data:image/[A-Za-z+]+[,;][A-Za-z0-9+/=,;]*")
 bad = 0
 for path in sys.argv[2:]:
     try:
@@ -19,6 +20,7 @@ for path in sys.argv[2:]:
     except (UnicodeDecodeError, IsADirectoryError, FileNotFoundError):
         continue
     for n, l in enumerate(lines, 1):
+        l = blob.sub("", l)
         for rx in pats:
             if rx.search(l):
                 print(f"{path}:{n}: coincide con un patrón real")

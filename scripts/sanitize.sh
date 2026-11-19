@@ -21,10 +21,18 @@ for line in open(sys.argv[1], encoding="utf-8"):
         continue
     src, _, dst = line.partition(" => ")
     rules.append((re.compile(src), dst))
+# Los bloques data:image (base64) no se tocan: una regla genérica los corrompería
+blob = re.compile(r"data:image/[A-Za-z+]+[,;][A-Za-z0-9+/=,;]*")
+def clean(part):
+    for rx, dst in rules:
+        part = rx.sub(dst, part)
+    return part
 for path in sys.argv[2:]:
     text = open(path, encoding="utf-8").read()
-    for rx, dst in rules:
-        text = rx.sub(dst, text)
-    open(path, "w", encoding="utf-8").write(text)
+    out, pos = [], 0
+    for m in blob.finditer(text):
+        out.append(clean(text[pos:m.start()])); out.append(m.group(0)); pos = m.end()
+    out.append(clean(text[pos:]))
+    open(path, "w", encoding="utf-8").write("".join(out))
 PY
 echo "Saneado. Revisa el diff y ejecuta: scripts/check-real-data.sh $*"

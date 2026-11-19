@@ -39,12 +39,12 @@ resources:
     Alimentación documentada desde el Legrand KEOR PDU 800.
 
     ## Discos físicos actuales
-    1. Samsung SSD 850 EVO 250GB. SN: <redacted>.
+    1. Samsung SSD 850 EVO 250GB. SN: [redacted].
        Disco del sistema Proxmox: arranque UEFI y LVM.
-    2. Samsung SSD 870 EVO 500GB. SN: <redacted>.
+    2. Samsung SSD 870 EVO 500GB. SN: [redacted].
        Disco asociado históricamente a Windows de family; sigue instalado.
-    3. Intel S3520, INTEL SSDSC2BB960G7, 960 GB. SN: <redacted>.
-    4. Intel S3520, INTEL SSDSC2BB960G7, 960 GB. SN: <redacted>.
+    3. Intel S3520, INTEL SSDSC2BB960G7, 960 GB. SN: [redacted].
+    4. Intel S3520, INTEL SSDSC2BB960G7, 960 GB. SN: [redacted].
     Los dos Intel están en espejo y almacenan las copias de Moon.
     El nombre del pool, la ruta del datastore y la capa donde se gestiona el
     espejo no se han recuperado; no se presupone passthrough ni un tipo de RAID.
@@ -130,7 +130,7 @@ resources:
     port.GE8.tagged: 30,32,40,50
     port.GE8.untagged: 10
   notes: |
-    Gestión: 10.0.10.3/24. SN: <redacted>, confirmado en resumen del sistema.
+    Gestión: 10.0.10.3/24. SN: [redacted], confirmado en resumen del sistema.
     Hostname actual: switch01. MAC base: XX:XX:XX:XX:XX:XX.
     PID/VID: SG200-10FP V05. Firmware: 1.4.11.5; boot: 1.3.5.06.
     Tramas jumbo deshabilitadas. HTTP, HTTPS y SNMP habilitados en la captura.
@@ -240,7 +240,7 @@ resources:
     MikroTik CCR2004-16G-2S+, ARM64. Gestión: 10.0.10.1/24.
     Captura actual del 06-11-2026: RouterOS 7.25, ARM64, cuatro núcleos a
     1700 MHz, RAM4096 MiB y flash128 MiB.
-    RouterBOARD CCR2004-16G-2S+, revisión r2, SN <redacted>.
+    RouterBOARD CCR2004-16G-2S+, revisión r2, SN [redacted].
     Firmware actual y disponible: 7.25; no hay diferencia entre ambos en la captura.
 
     ## Puertos físicos
@@ -736,16 +736,16 @@ resources:
 
     ## Discos físicos y ranuras
     M.2 2280, ranura 1: Sabrent NVMe 256 GB, 238,47 GB mostrados por QTS.
-      SN <redacted>; firmware RKT343.4.
+      SN [redacted]; firmware RKT343.4.
     M.2 2280, ranura 2: Sabrent NVMe 256 GB, 238,47 GB mostrados por QTS.
-      SN <redacted>; firmware RKT303.3.
+      SN [redacted]; firmware RKT303.3.
     La familia Rocket procede del diagrama; la GUI solo identifica modelo Sabrent.
     Las dos series se transcriben uniendo el último carácter que la GUI muestra
     en una segunda línea: 6 para la ranura1 y9 para la ranura2.
     Ambos NVMe figuran como Datos y con enlace PCIe Gen3x1 en la captura.
     Vida útil estimada capturada: 96% / 94%; no son valores de monitorización en vivo.
-    Bandeja 1: Seagate IronWolf 4 TB, ST4000VN006-3CW104; SN <redacted>.
-    Bandeja 2: Seagate IronWolf 4 TB, ST4000VN006-3CW104; SN <redacted>.
+    Bandeja 1: Seagate IronWolf 4 TB, ST4000VN006-3CW104; SN [redacted].
+    Bandeja 2: Seagate IronWolf 4 TB, ST4000VN006-3CW104; SN [redacted].
     Los discos de las bandejas 1 y 2 proceden del antiguo TrueNAS de earth.
     Bandejas3 y4: vacías, confirmado por el propietario y las capturas.
     Hay DOS IronWolf, no tres. La ampliación con un tercero se descartó al
