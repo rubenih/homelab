@@ -1,0 +1,27 @@
+version: "3.3"
+services:
+  navidrome:
+    image: deluan/navidrome:latest
+    container_name: navidrome
+    networks:
+      - dockervlan
+    user: "1000:1000"
+    environment:
+      - ND_LOGLEVEL=info
+      - ND_SESSIONTIMEOUT=24h
+      - ND_BASEURL=https://music.example.com
+    volumes:
+      - /opt/docker-volumes/data/navidrome:/data
+      - /mnt/media/musica:/music:ro
+    restart: unless-stopped
+    labels:
+      - "wud.update=true"
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "traefik.enable=true"
+      - "traefik.docker.network=dockervlan"
+      - "traefik.http.routers.navidrome-rtr.entrypoints=websecure"
+      - "traefik.http.routers.navidrome-rtr.rule=Host(`music.example.com`)"
+      - "traefik.http.routers.navidrome-rtr.tls=true"
+      - "traefik.http.routers.navidrome-rtr.service=navidrome-svc"
+      - "traefik.http.services.navidrome-svc.loadbalancer.server.port=4533"
+    #  - "traefik.http.routers.navidrome-rtr.middlewares=authelia-auth@docker"

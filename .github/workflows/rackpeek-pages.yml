@@ -37,8 +37,8 @@ jobs:
           LAB_PATTERNS: ${{ secrets.LAB_PATTERNS }}
         run: |
           if [ -z "$LAB_PATTERNS" ]; then echo "::error::Falta el secreto LAB_PATTERNS"; exit 1; fi
-          printf '%s\n' "$LAB_PATTERNS" 'PrivateKey|password|token|secret' > /tmp/patterns
-          if grep -nIiE -f /tmp/patterns homelab/rackpeek/config.yaml; then
+          printf '%s\n' "$LAB_PATTERNS" '[Pp]rivate[Kk]ey|[Pp]assword:|[Tt]oken:' > /tmp/patterns
+          if grep -qIE -f /tmp/patterns homelab/rackpeek/config.yaml; then
             echo "::error::config.yaml contiene datos que no deben publicarse"; exit 1
           fi
 

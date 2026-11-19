@@ -1,0 +1,83 @@
+version: "3.7"
+
+services:
+  # --- BASE DE DATOS (MariaDB) ---
+  database_nextcloud:
+    image: mariadb:10.11.18
+    container_name: mariadb_nextcloud
+    restart: unless-stopped
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW --innodb-file-per-table=1 --skip-innodb-read-only-compressed --character-set-server=utf8mb4 --collation-server=utf8mb4_bin --innodb-default-row-format=dynamic
+    volumes:
+      - /opt/docker-volumes/data/mariadb_nextcloud_10_11:/var/lib/mysql
+    environment:
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/mariadb_root_password
+      - MARIADB_PASSWORD_FILE=/run/secrets/mariadb_nextcloud_password
+      - MARIADB_DATABASE=nextcloud
+      - MARIADB_USER=nextcloud
+    networks:
+      - nextcloud_internal  # <--- CAMBIO: Solo red interna privada
+
+  # --- APLICACIÓN (Nextcloud) ---
+    secrets:
+      - mariadb_root_password
+      - mariadb_nextcloud_password
+
+  nextcloud:
+    image: lscr.io/linuxserver/nextcloud@sha256:b7b489b4023ce51e043e586c60f730ab8d93fcf030b23e35ddeab83999a65cfa
+    container_name: nextcloud
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - FILE__MYSQL_PASSWORD=/run/secrets/mariadb_nextcloud_password
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_HOST=database_nextcloud      # Gracias a la red interna, ahora sabrá quién es "db"
+    volumes:
+      - /opt/docker-volumes/data/nextcloud/config:/config
+      - /mnt/nextcloud:/data
+      # Archivo fotográfico de TrueNAS, gestionado desde Nextcloud
+      - type: bind
+        source: /mnt/fotos
+        target: /mnt/fotos
+        bind:
+          propagation: rslave
+          create_host_path: false
+
+
+    depends_on:
+      - database_nextcloud
+    # 'links' ya no es necesario en redes modernas, lo quito para limpiar
+    
+    networks:
+      - nextcloud_internal  # <--- PATA 1: Para hablar con la DB
+      - dockervlan          # <--- PATA 2: Para salir a Internet (Traefik)
+    
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=dockervlan"
+      # HTTP Routers
+      - "traefik.http.routers.nextcloud-rtr.entrypoints=websecure"
+      - "traefik.http.routers.nextcloud-rtr.rule=Host(`nextcloud.example.com`)"
+      - "traefik.http.routers.nextcloud-rtr.tls=true"
+      - "traefik.http.routers.nextcloud-rtr.middlewares=nextcloud-hsts@file"
+      ## HTTP Services
+      - "traefik.http.routers.nextcloud-rtr.service=nextcloud-svc"
+      - "traefik.http.services.nextcloud-svc.loadbalancer.server.port=80" # El contenedor de linuxserver usa puerto 80 interna o 443. Verifica si es 80 o 443 en docker logs.
+    secrets:
+      - mariadb_nextcloud_password
+
+networks:
+  dockervlan:
+    external: true
+  
+  # Nueva red privada para que se encuentren por nombre
+  nextcloud_internal:
+    driver: bridge
+
+secrets:
+  mariadb_root_password:
+    file: /etc/lab-secrets/nextcloud/mariadb_root_password
+  mariadb_nextcloud_password:
+    file: /etc/lab-secrets/nextcloud/mariadb_nextcloud_password

@@ -1,0 +1,40 @@
+version: "3.7"
+
+services:
+  grocy:
+    image: lscr.io/linuxserver/grocy:latest
+    pull_policy: always
+    container_name: grocy
+    restart: unless-stopped
+    
+    networks:
+      dockervlan:
+
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Madrid
+
+    volumes:
+      - "/opt/docker-volumes/data/grocy/appdata/config:/config"
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=dockervlan"
+      
+      ## HTTP Routers
+      - "traefik.http.routers.grocy-rtr.entrypoints=websecure"
+      - "traefik.http.routers.grocy-rtr.rule=Host(`grocy.example.com`)"
+      - "traefik.http.routers.grocy-rtr.tls=true"
+      - "traefik.http.routers.grocy-rtr.tls.certresolver=dns-cloudflare"
+      
+      ## Service Definition
+      - "traefik.http.services.grocy-svc.loadbalancer.server.port=80"
+      - "traefik.http.routers.grocy-rtr.middlewares=authelia-auth@docker"
+
+      ## Watchtower
+      - "com.centurylinklabs.watchtower.enable=true"
+
+networks:
+  dockervlan:
+    external: true

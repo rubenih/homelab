@@ -1,0 +1,29 @@
+version: '3.0'
+services:
+  wallos:
+    container_name: wallos
+    image: bellamy/wallos:latest
+    networks:
+      - dockervlan
+    environment:
+      TZ: "Europe/Madrid"
+    # Volumes store your data between container upgrades
+    volumes:
+      - "/opt/docker-volumes/data/wallos/db:/var/www/html/db"
+      - "/opt/docker-volumes/data/wallos/logos:/var/www/html/images/uploads/logos"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=dockervlan"
+      # HTTP Routers
+      - "traefik.http.routers.wallos-rtr.entrypoints=websecure"
+      - "traefik.http.routers.wallos-rtr.rule=Host(`wallos.example.com`)"
+      - "traefik.http.routers.wallos-rtr.tls=true"
+      ## HTTP Services
+      - "traefik.http.routers.wallos-rtr.service=wallos-svc"
+      - "traefik.http.services.wallos-svc.loadbalancer.server.port=80"
+      - "traefik.http.routers.wallos-rtr.middlewares=authelia-auth@docker"
+
+      # LA ETIQUETA MÁGICA DE WATCHTOWER:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+    restart: unless-stopped

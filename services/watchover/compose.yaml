@@ -1,0 +1,30 @@
+version: "3"
+services:
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      # NECESARIO: Permiso para hablar con el motor de Docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Opcional: Para que los logs salgan con tu hora local correcta
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - DOCKER_API_VERSION=1.44
+      # --- MODOS DE FUNCIONAMIENTO ---
+      # TRUE = Solo actualiza contenedores con la etiqueta "enable=true"
+      - WATCHTOWER_LABEL_ENABLE=true
+      # Borra la imagen vieja tras descargar la nueva para ahorrar espacio
+      - WATCHTOWER_CLEANUP=true
+      # Frecuencia de chequeo en segundos (86400 = 24 horas)
+      #- WATCHTOWER_POLL_INTERVAL=86400
+
+      #Actualizacion Programada --> Formato: Segundos Minutos Horas Día Mes Año
+      # Esto significa: A las 04:00:00 AM todos los días
+      - WATCHTOWER_SCHEDULE=0 0 4 * * * # Define tu zona horaria para que las 4 AM sean TUS 4 AM, no las de Londres (UTC)
+      - TZ=Europe/Madrid  # Cambia esto por tu zona horaria si no estás en España
+
+      # --- NOTIFICACIONES (Ejemplo con Telegram - Opcional) ---
+      # Si quieres usar esto, descomenta y rellena:
+      # - WATCHTOWER_NOTIFICATIONS=shoutrrr
+      # - WATCHTOWER_NOTIFICATION_URL=telegram://TOKEN@telegram?channels=CHAT_ID

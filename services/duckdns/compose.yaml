@@ -1,0 +1,26 @@
+version: "2.1"
+services:
+  duckdns:
+    image: lscr.io/linuxserver/duckdns:latest
+    container_name: duckdns
+    restart: unless-stopped
+    networks:
+      - dockervlan
+    environment:
+      - PUID=1000 #optional
+      - PGID=1000 #optional
+      - TZ=Europe/Madrid
+      - SUBDOMAINS=lab
+      - FILE__TOKEN=/run/secrets/duckdns_token
+      - LOG_FILE=false #optional
+    secrets:
+      - duckdns_token
+    volumes:
+      - /opt/docker-volumes/data/duckdns/appdata/config:/config 
+    labels:
+      # LA ETIQUETA MÁGICA DE WATCHTOWER:
+      - "com.centurylinklabs.watchtower.enable=true"
+secrets:
+  duckdns_token:
+    file: /etc/lab-secrets/duckdns/duckdns_token
+   

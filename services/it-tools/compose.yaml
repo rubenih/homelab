@@ -1,0 +1,22 @@
+version: "3.3"
+services:
+  it-tools:
+    image: corentinth/it-tools:latest
+    container_name: it-tools
+    networks:
+      - dockervlan
+    restart: unless-stopped
+    labels:
+      # Actualizaciones automáticas
+      - "wud.update=true"
+      - "com.centurylinklabs.watchtower.enable=true"
+
+      # Enrutamiento Traefik
+      - "traefik.enable=true"
+      - "traefik.docker.network=dockervlan"
+      - "traefik.http.routers.ittools-rtr.entrypoints=websecure"
+      - "traefik.http.routers.ittools-rtr.rule=Host(`it-tools.example.com`)"
+      - "traefik.http.routers.ittools-rtr.tls=true"
+      - "traefik.http.routers.ittools-rtr.service=ittools-svc"
+      - "traefik.http.services.ittools-svc.loadbalancer.server.port=80"
+      - "traefik.http.routers.ittools-rtr.middlewares=authelia-auth@docker"

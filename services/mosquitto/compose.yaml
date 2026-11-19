@@ -1,0 +1,38 @@
+version: "3.7"
+services:
+  # mqtt5 eclipse-mosquitto
+  mqtt5:
+    image: eclipse-mosquitto
+    container_name: mqtt5
+    networks:
+      - dockervlan
+
+    #ports:
+    #  - "1883:1883" #default mqtt port
+    #  - "9001:9001" #default mqtt port for websockets
+    volumes:
+      - /opt/docker-volumes/data/mosquitto/config:/mosquitto/config:rw
+      - /opt/docker-volumes/data/mosquitto/data:/mosquitto/data:rw
+      - /opt/docker-volumes/data/mosquitto/log:/mosquitto/log:rw
+    restart: unless-stopped
+    labels:
+      # Habilitar etiquetas específicas para WUD
+      - "wud.update=true"
+
+      # Habilitar traefik
+      - "traefik.enable=true"
+      - "traefik.docker.network=dockervlan"
+
+      # MQTT TCP (1883)
+      - "traefik.tcp.routers.mosquitto-tcp.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.mosquitto-tcp.entrypoints=mqtt"
+      - "traefik.tcp.routers.mosquitto-tcp.service=mosquitto-tcp-svc"
+      - "traefik.tcp.services.mosquitto-tcp-svc.loadbalancer.server.port=1883"
+
+      # HTTP/HTTPS (websocket o interfaz web 9001)
+      - "traefik.http.routers.mosquitto-ws.entrypoints=websecure"
+      - "traefik.http.routers.mosquitto-ws.rule=Host(`mosquitto.example.com`)"
+      - "traefik.http.routers.mosquitto-ws.tls=true"
+      - "traefik.http.routers.mosquitto-ws.service=mosquitto-ws-svc"
+      - "traefik.http.services.mosquitto-ws-svc.loadbalancer.server.port=9001"
+

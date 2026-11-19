@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    networks:
+      dockervlan:
+        ipv4_address: 10.0.31.26
+      monitor_net:  
+        ipv4_address: 172.30.0.2
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+    volumes:
+      - /opt/docker-volumes/data/prometheus/config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - /opt/docker-volumes/data/prometheus/data:/prometheus
+    restart: unless-stopped
+    labels:
+      # Actualizaciones automáticas (WUD / Watchtower)
+      - "wud.update=true"
+      - "com.centurylinklabs.watchtower.enable=true"
+      
+      # Traefik Core
+      - "traefik.enable=true"
+      - "traefik.docker.network=dockervlan"
+      
+      # HTTP Routers
+      - "traefik.http.routers.prometheus-rtr.entrypoints=websecure"
+      - "traefik.http.routers.prometheus-rtr.rule=Host(`prometheus.example.com`)"
+      - "traefik.http.routers.prometheus-rtr.tls=true"
+      
+      # HTTP Services
+      - "traefik.http.routers.prometheus-rtr.service=prometheus-svc"
+      - "traefik.http.services.prometheus-svc.loadbalancer.server.port=9090"
+      - "traefik.http.routers.prometheus-rtr.middlewares=authelia-auth@docker"
+
+networks:
+  dockervlan:
+    external: true
+  monitor_net:  
+    name: monitor_net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+          gateway: 172.30.0.1

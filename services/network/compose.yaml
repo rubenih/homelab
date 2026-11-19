@@ -1,0 +1,23 @@
+networks:
+  dockervlan:
+    name: dockervlan
+    driver: ipvlan
+    driver_opts:
+      parent: enp6s18
+    ipam:
+      config:
+        - subnet: "10.0.31.0/24"
+          ip_range: "10.0.31.128/25"
+          gateway: "10.0.31.1"
+# --- NUEVA RED IOT (VLAN 50) ---
+  dockervlan_iot:
+    name: dockervlan_iot
+    driver: ipvlan
+    driver_opts:
+      parent: enp6s19  # Interfaz del Ubuntu Server en VLAN50: XX:XX:XX:XX:XX:XX
+    ipam:
+      config:
+        - subnet: "10.0.50.0/24"
+          # Rango reservado para Docker en la VLAN 50
+          ip_range: "10.0.50.96/30"
+          gateway: "10.0.50.1"

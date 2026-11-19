@@ -1,0 +1,2137 @@
+version: 5
+resources:
+- kind: Server
+  ram:
+    size: 48
+    mts: 2133
+  cpus:
+  - model: Intel Core i5-6500 @ 3.20GHz
+    cores: 4
+    threads: 4
+  drives:
+  - type: ssd
+    size: 250
+  - type: ssd
+    size: 500
+  - type: ssd
+    size: 960
+  - type: ssd
+    size: 960
+  ports:
+  - type: rj45
+    speed: 1
+    count: 3
+  name: LAB-proxmox-01.srv
+  tags:
+  - proxmox
+  - earth
+  - backup-host
+  labels:
+    hostname: earth
+    management.ip: 10.0.10.16
+  notes: |
+    ## Identidad y función actual
+    Hostname: earth. Proxmox VE independiente; no forma parte de un clúster.
+    El servidor antiguo conserva su nombre en RackPeek.
+    Aloja Moon (VM de Proxmox Backup Server) y Windows de family (VM 777).
+    Ambas VM tienen arranque automático al encender earth.
+    TrueNAS fue eliminado. Los dos HDD IronWolf de 4 TB se trasladaron al QNAP.
+    Alimentación documentada desde el Legrand KEOR PDU 800.
+
+    ## Discos físicos actuales
+    1. Samsung SSD 850 EVO 250GB. SN: <redacted>.
+       Disco del sistema Proxmox: arranque UEFI y LVM.
+    2. Samsung SSD 870 EVO 500GB. SN: <redacted>.
+       Disco asociado históricamente a Windows de family; sigue instalado.
+    3. Intel S3520, INTEL SSDSC2BB960G7, 960 GB. SN: <redacted>.
+    4. Intel S3520, INTEL SSDSC2BB960G7, 960 GB. SN: <redacted>.
+    Los dos Intel están en espejo y almacenan las copias de Moon.
+    El nombre del pool, la ruta del datastore y la capa donde se gestiona el
+    espejo no se han recuperado; no se presupone passthrough ni un tipo de RAID.
+    Los SN Samsung se recuperaron del registro UEFI del 07-10-2026;
+    los SN Intel se verificaron en las salidas SMART del 06-10-2026.
+    Las letras /dev/sdX son históricas y no se usan como identificadores.
+
+    ## Numeración de puertos en este inventario
+    Grupo 0, índice 0: Ethernet integrada; gestión de earth -> switch GE10.
+      Descripción de GE10 en el Cisco: NIC0 - enp5s0.
+    Grupo 0, índice 1: tarjeta PCIe, puerto inferior; trunk -> switch GE9.
+      Descripción de GE9 en el Cisco: NIC2 - enp1s0f1.
+    Los nombres se recuperan de las descripciones actuales del Cisco;
+    no sustituyen una auditoría actual del sistema operativo de earth.
+    GE9 y GE10 aparecen inactivos en las capturas del switch del 06-11-2026.
+    Grupo 0, índice 2: tarjeta PCIe, puerto superior.
+    El destino documentado del puerto superior es ETH1 de mars, vmbr1,
+    según el fichero de red actual de mars y las notas anteriores de Wake-on-LAN.
+    Se añade esa conexión documental con verificación física pendiente en earth.
+    La referencia histórica de Linux para ese puerto es enp1s0f0; no revalidada.
+
+    RAM y frecuencia conservadas del inventario anterior: 48 GB / 2133 MT/s.
+- kind: Switch
+  model: Cisco SG200-10FP
+  managed: true
+  poe: true
+  ports:
+  - type: rj45
+    speed: 1
+    count: 10
+  - type: sfp
+    speed: 1
+    count: 2
+  name: LAB-lan-01.sw
+  labels:
+    management.ip: 10.0.10.3
+    hostname: switch01
+    firmware: 1.4.11.5
+    boot.version: 1.3.5.06
+    hardware.revision: V05
+    jumbo: disabled
+    poe.budget.w: 62
+    poe.observed.w: 12
+    configuration.observed: 2026-11-06
+    port.GE1.mode: trunk
+    port.GE1.pvid: 4095
+    port.GE1.tagged: 10,20,30,31,32,40,50
+    port.GE1.untagged: none-shown
+    port.GE3.mode: trunk
+    port.GE3.pvid: 4095
+    port.GE3.tagged: 10,20,30,31,32,40,50
+    port.GE3.untagged: none-shown
+    port.GE4.mode: trunk
+    port.GE4.pvid: 4095
+    port.GE4.tagged: 10,20,30,31,32,40,50
+    port.GE4.untagged: none-shown
+    port.GE9.mode: trunk
+    port.GE9.pvid: 4095
+    port.GE9.tagged: 10,20,30,31,32,40,50
+    port.GE9.untagged: none-shown
+    port.GE2.mode: access
+    port.GE2.pvid: 10
+    port.GE2.tagged: none
+    port.GE2.untagged: 10
+    port.GE5.mode: access
+    port.GE5.pvid: 10
+    port.GE5.tagged: none
+    port.GE5.untagged: 10
+    port.GE10.mode: access
+    port.GE10.pvid: 10
+    port.GE10.tagged: none
+    port.GE10.untagged: 10
+    port.GE6.mode: access
+    port.GE6.pvid: 50
+    port.GE6.tagged: none
+    port.GE6.untagged: 50
+    port.GE7.mode: trunk
+    port.GE7.pvid: 10
+    port.GE7.tagged: 30,32,40,50
+    port.GE7.untagged: 10
+    port.GE8.mode: trunk
+    port.GE8.pvid: 10
+    port.GE8.tagged: 30,32,40,50
+    port.GE8.untagged: 10
+  notes: |
+    Gestión: 10.0.10.3/24. SN: <redacted>, confirmado en resumen del sistema.
+    Hostname actual: switch01. MAC base: XX:XX:XX:XX:XX:XX.
+    PID/VID: SG200-10FP V05. Firmware: 1.4.11.5; boot: 1.3.5.06.
+    Tramas jumbo deshabilitadas. HTTP, HTTPS y SNMP habilitados en la captura.
+    Presupuesto PoE62 W; consumo PoE12 W en esa captura, no medida permanente.
+    El reloj interno mostrado es 2020-04-28; las capturas fueron aportadas
+    el 06-11-2026 y no se usa ese reloj como fecha de observación.
+    GE1 -> MikroTik ether2, trunk VLAN 10,30,31,32,40,50.
+    GE2 -> mars ETH0, gestión VLAN10.
+    GE3 -> descripción TRUNK -, inactivo y sin destino identificado.
+    GE4 -> mars ETH2, trunk VLAN 10,30,31,32,40,50.
+    GE5 -> QNAP puerto 3, gestión VLAN10.
+    GE6 -> SMLight SLZB-06 por P13, VLAN50, PoE.
+    GE7 -> U6+ pasillo por P14, PoE.
+    GE8 -> U6 Pro salón por P15, PoE.
+    GE9 -> earth, NIC2/enp1s0f1, puerto inferior de la tarjeta PCIe, trunk.
+    GE10 -> earth, NIC0/enp5s0, Ethernet integrada, gestión VLAN10.
+    Las capturas 141431 y 141521 coinciden: GE1,2,4,5,7,8 activos
+    a1000 Mb/s; GE6 activo a100 Mb/s. Todos los activos están full duplex.
+    GE3,9,10 inactivos, sin velocidad negociada mostrada.
+    La tabla Afiliación VLAN de puertos confirma que las VLAN administrativas
+    y operativas coinciden para los diez puertos en la captura del 06-11-2026.
+    GE1,GE3,GE4,GE9: modo troncal; etiquetadas10,20,30,31,32,40,50;
+      la interfaz muestra literalmente4095P (PVID4095), sin marca U para4095.
+    GE2,GE5,GE10: modo acceso; VLAN10 sin etiquetar y PVID10 (10UP).
+    GE6: modo acceso; VLAN50 sin etiquetar y PVID50 (50UP).
+    GE7,GE8: modo troncal; VLAN10 sin etiquetar y PVID10;
+      VLAN30,32,40,50 etiquetadas. VLAN20 y VLAN31 no figuran en estos puertos.
+    VLAN20 está permitida en los trunks citados del Cisco, pero su subinterfaz
+    RouterOS está deshabilitada. No se presenta como red operativa en el router.
+    PVID4095 se registra como valor de puerto mostrado, sin inventar una subred
+    IP4095 ni atribuirle pertenencia sin etiquetar que la tabla no muestra.
+
+    Grupo 0, índices 0-9 = GE1-GE10 RJ45, todos de 1 Gb/s.
+    Grupo 1, índices 0-1 = SFP combo de GE9/GE10, ambos de 1 Gb/s.
+    Los conectores SFP comparten los puertos lógicos GE9/GE10 con sus RJ45:
+    no representan dos puertos independientes adicionales. En esta configuración
+    GE9/GE10 se usan en cobre; no hay conexiones SFP activas.
+    PoE en GE1-GE8; no se presupone PoE en GE9/GE10.
+    Se corrige el valor anterior de 10 Gb/s para los SFP.
+    https://www.cisco.com/c/dam/en/us/products/collateral/switches/small-business-100-series-unmanaged-switches/brochure_c02-642208.pdf
+- kind: Router
+  model: MikroTik CCR2004-16G-2S+
+  managed: true
+  ports:
+  - type: rj45
+    speed: 1
+    count: 16
+  - type: sfp+
+    speed: 10
+    count: 2
+  name: LAB-01.rtr
+  tags:
+  - mikrotik
+  - router
+  labels:
+    management.ip: 10.0.10.1
+    identity: LAB-01.rtr
+    revision: r2
+    routeros.version: 7.25
+    firmware.current: 7.25
+    firmware.available: 7.25
+    configuration.observed: 2026-11-06
+    wireguard.cidr: 10.0.100.1/24
+    port.ether1.admin: disabled
+    port.ether1.link.observed: not-running
+    port.ether2.admin: enabled
+    port.ether2.link.observed: running
+    port.ether3.admin: enabled
+    port.ether3.link.observed: not-running
+    port.ether4.admin: disabled
+    port.ether4.link.observed: not-running
+    port.ether5.admin: enabled
+    port.ether5.link.observed: not-running
+    port.ether6.admin: disabled
+    port.ether6.link.observed: not-running
+    port.ether7.admin: enabled
+    port.ether7.link.observed: not-running
+    port.ether8.admin: disabled
+    port.ether8.link.observed: not-running
+    port.ether9.admin: enabled
+    port.ether9.link.observed: running
+    port.ether10.admin: disabled
+    port.ether10.link.observed: not-running
+    port.ether11.admin: enabled
+    port.ether11.link.observed: running
+    port.ether12.admin: disabled
+    port.ether12.link.observed: not-running
+    port.ether13.admin: enabled
+    port.ether13.link.observed: running
+    port.ether14.admin: disabled
+    port.ether14.link.observed: not-running
+    port.ether15.admin: enabled
+    port.ether15.link.observed: not-running
+    port.ether16.admin: enabled
+    port.ether16.link.observed: running
+    port.sfp-sfpplus1.admin: disabled
+    port.sfp-sfpplus1.link.observed: not-running
+    port.sfp-sfpplus2.admin: disabled
+    port.sfp-sfpplus2.link.observed: not-running
+    port.ether2.negotiated.mbps: 1000
+    port.ether9.negotiated.mbps: 100
+    port.ether11.negotiated.mbps: 100
+    port.ether13.negotiated.mbps: 100
+    port.ether16.negotiated.mbps: 1000
+  notes: |
+    ## Plataforma y gestión
+    MikroTik CCR2004-16G-2S+, ARM64. Gestión: 10.0.10.1/24.
+    Captura actual del 06-11-2026: RouterOS 7.25, ARM64, cuatro núcleos a
+    1700 MHz, RAM4096 MiB y flash128 MiB.
+    RouterBOARD CCR2004-16G-2S+, revisión r2, SN <redacted>.
+    Firmware actual y disponible: 7.25; no hay diferencia entre ambos en la captura.
+
+    ## Puertos físicos
+    Grupo 0, índices 0-15 = ether1-ether16, RJ45 1 Gb/s.
+    ether1 -> P07 comedor en el diagrama; actualmente DESHABILITADO y sin
+      pertenencia documentada a BRIDGE30. No se describe como acceso VLAN30 activo.
+    ether2 -> switch GE1, trunk VLAN 10,30,31,32,40,50.
+    ether3 -> P08 habitación 3, acceso VLAN30.
+    ether5 -> P09 habitación 2, acceso VLAN30.
+    ether7 -> P10 habitación 1 / workstation, acceso VLAN30.
+    ether9 -> P11 TV Philips, acceso VLAN50.
+    ether11 -> P12 Philips Hue, acceso VLAN50.
+    ether13 -> P19 Raspberry Pi / NUT, acceso VLAN50.
+    ether16 -> router del operador, WAN por DHCP.
+    ether4,6,8,10,12,14: deshabilitados en la captura.
+    ether15: habilitado, sin enlace y sin pertenencia a los bridges mostrados.
+    ether3,5,7: habilitados en BRIDGE30 pero sin enlace activo en esta captura.
+    ether2 y ether16: enlace activo a 1 Gb/s full duplex, autonegociación completada.
+    ether9, ether11 y ether13: enlace activo a 100 Mb/s full duplex.
+    El propietario confirma el cableado ether9 -> P11 -> TV, sin equipo intermedio.
+    La TV estaba apagada al tomar las salidas. Como observación puntual, la FDB
+    aprendía por ether9:
+    - XX:XX:XX:XX:XX:XX = Echo Dot Cocina, 10.0.50.248.
+    - XX:XX:XX:XX:XX:XX = Echo Dot Dormitorio, 10.0.50.246.
+    - XX:XX:XX:XX:XX:XX = Echo Dot Despacho, 10.0.50.253.
+    La MAC de la TV XX:XX:XX:XX:XX:XX no aparece en la consulta de FDB y
+    su entrada ARP 10.0.50.227 en BRIDGE50 figura como failed.
+    La FDB confirma XX:XX:XX:XX:XX:XX (Hue) en ether11 y
+    XX:XX:XX:XX:XX:XX (Raspberry Pi) en ether13.
+    Esta observación no se usa para cambiar el cableado físico confirmado.
+    Grupo 1, índices 0 y 1 = sfp-sfpplus1/2, 10 Gb/s; ambos deshabilitados.
+    Las tomas de pared sin equipo final identificado se describen en notas;
+    no se inventan dispositivos detrás de ellas.
+
+    ## Segmentos del diagrama confirmado
+    VLAN10 MGMT: 10.0.10.1/24.
+    VLAN30 ADMIN: 10.0.30.1/24.
+    VLAN31 DOCKER/VM: 10.0.31.1/24.
+    VLAN32 SIN INTERNET: 10.0.32.1/24, verificado en /ip address.
+    VLAN40 INVITADOS: 10.0.40.1/24.
+    VLAN50 SMART HOME: 10.0.50.1/24.
+    DHCP documentado para VLAN 10,30,31,40,50.
+    Se corrige el error 172.32.32.0/24 del dibujo.
+    VLAN20 existe sobre ether2 pero está deshabilitada y sin IP en la salida.
+    Todas las interfaces 802.1Q VLAN10,20,30,31,32,40,50 dependen de ether2.
+
+    ## Implementación efectiva de los puertos de acceso
+    BRIDGE30 contiene VLAN30 y ether3, ether5, ether7.
+    BRIDGE50 contiene VLAN50 y ether9, ether11, ether13.
+    Ambos bridges tienen vlan-filtering=no, RSTP y MTU1500.
+    Los puertos de bridge muestran PVID1, pero el filtrado VLAN está desactivado.
+    El acceso a las redes 30 y 50 se realiza mediante el bridge con la
+    subinterfaz VLAN30/VLAN50 de ether2, no mediante un PVID30/PVID50.
+    Las entradas de /interface bridge vlan no aplican filtrado mientras esté
+    desactivado; no se reinterpretan como configuración VLAN-aware activa.
+    Las direcciones 10.0.30.1 y 10.0.50.1 aparecen configuradas en las
+    interfaces VLAN30/VLAN50, con actual-interface BRIDGE30/BRIDGE50.
+
+    ## VPN WireGuard
+    wireguard1: 10.0.100.1/24, red VPN 10.0.100.0/24.
+    El comentario la denomina VLAN100, pero no aparece una subinterfaz
+    802.1Q VLAN100 en la salida; se documenta como red WireGuard.
+    No se recopilan claves ni configuración de peers.
+
+    ## WAN del diagrama
+    Router del operador: 192.168.1.1/24 según diagrama.
+    MikroTik WAN: 192.168.1.128/24, dirección dinámica observada en ether16.
+    El comentario de ether16 identifica al operador como ISP.
+    Cadena externa: ONT GPON -> router del operador -> ether16 MikroTik.
+    DNAT del operador hacia 192.168.1.128: TCP80, TCP443 y TCP/UDP51820.
+    Numeración física de los puertos del router del operador y modelo pendientes.
+- kind: AccessPoint
+  model: UniFi U6 Pro
+  speed: 1
+  ports:
+  - type: rj45
+    speed: 1
+    count: 1
+  name: LAB-U6-pro.ap
+  tags:
+  - salón
+  labels:
+    management.ip: 10.0.10.100
+    patch-panel: P15
+    uplink.pvid: 10
+    uplink.untagged: 10
+    uplink.tagged: 30,32,40,50
+  notes: |
+    Ubicación: salón. Gestión: 10.0.10.100/24.
+    Enlace: switch GE8 -> patch panel P15 -> AP, con PoE.
+    Redes Wi-Fi documentadas:
+    - VLAN30: lab-CASA-PRV.
+    - VLAN40: lab-INVITADOS.
+    - VLAN50: lab-SMART(2_4GHz).
+    El Cisco confirma VLAN10 sin etiquetar y PVID10 para gestión;
+    VLAN30,32,40,50 etiquetadas. VLAN20 y VLAN31 no figuran en el puerto.
+    No se ha aportado un SSID para VLAN32.
+- kind: AccessPoint
+  model: UniFi U6+
+  speed: 1
+  ports:
+  - type: rj45
+    speed: 1
+    count: 1
+  name: LAB-U6-plus.ap
+  tags:
+  - pasillo
+  labels:
+    management.ip: 10.0.10.101
+    patch-panel: P14
+    uplink.pvid: 10
+    uplink.untagged: 10
+    uplink.tagged: 30,32,40,50
+  notes: |
+    Ubicación: pasillo. Gestión: 10.0.10.101/24.
+    Enlace: switch GE7 -> patch panel P14 -> AP, con PoE.
+    Redes Wi-Fi documentadas:
+    - VLAN30: lab-CASA-PRV.
+    - VLAN40: lab-INVITADOS.
+    - VLAN50: lab-SMART(2_4GHz).
+    El Cisco confirma VLAN10 sin etiquetar y PVID10 para gestión;
+    VLAN30,32,40,50 etiquetadas. VLAN20 y VLAN31 no figuran en el puerto.
+    No se ha aportado un SSID para VLAN32.
+- kind: Ups
+  model: Legrand KEOR PDU 800
+  va: 800
+  name: LAB-legrand-01.ups
+  tags:
+  - power
+  - ups
+  - legrand
+  notes: |
+    SAI Legrand KEOR PDU 800: 800 VA / 480 W, 230 V.
+    USB conectado a la Raspberry Pi 3; servicio Network UPS Tools.
+    Driver documentado: usbhid-ups. Nombre NUT: Legrand-lab.
+    Referencia histórica de carga: 37%; autonomía estimada entonces: 23 minutos.
+    Estas cifras son una captura anterior, no telemetría actual.
+    El enlace USB se documenta en notas; las conexiones de este YAML son Ethernet.
+- kind: Server
+  ram:
+    size: 1
+  drives:
+  - type: micro-sd
+    size: 64
+  gpus:
+  - model: Broadcom VideoCore IV (headless)
+  ports:
+  - type: rj45
+    speed: 0.1
+    count: 1
+  name: LAB-rpi3-01.srv
+  tags:
+  - management
+  - nut-server
+  - rpi3
+  labels:
+    management.ip: 10.0.50.226
+    hostname: lab-rpi3
+    patch-panel: P19
+    connection.verification: FDB on ether13
+    link.observed.mbps: 100
+  notes: |
+    Raspberry Pi 3B, hostname lab-rpi3, servidor NUT para la telemetría del SAI Legrand.
+    NO es QDevice. No hay clúster Proxmox.
+    Reserva DHCP confirmada 10.0.50.226, VLAN50, estado bound en la captura.
+    MAC XX:XX:XX:XX:XX:XX. El enlace ether13 negocia 100 Mb/s full duplex.
+    Conexión: MikroTik ether13 -> patch panel P19 -> Ethernet 10/100 de la RPi.
+    USB: enlace al Legrand KEOR PDU 800; dispositivo NUT Legrand-lab.
+    Sistema: Raspberry Pi OS; versión y arquitectura efectiva pendientes.
+    MicroSD de 64 GB y ZRAM ~905 MB según inventario anterior.
+    Alimentación mediante adaptador; origen exacto de alimentación pendiente.
+- kind: Other
+  model: Patch panel Cat6 24 puertos
+  description: Panel de parcheo pasivo
+  ports:
+  - type: rj45
+    speed: 1
+    count: 24
+  name: LAB-path-01.pp
+  tags:
+  - patch-panel
+  - patch
+  notes: |
+    Patch panel pasivo de 24 puertos. Se conserva el nombre existente de RackPeek.
+    Cableado Cat6; terminación T568B, según inventario anterior.
+    P07 -> comedor -> MikroTik ether1.
+    P08 -> habitación 3 -> MikroTik ether3.
+    P09 -> habitación 2 -> MikroTik ether5.
+    P10 -> habitación 1 / workstation -> MikroTik ether7.
+    P11 -> TV Philips -> MikroTik ether9.
+    P12 -> Philips Hue -> MikroTik ether11.
+    P13 -> SMLight -> switch GE6, paso de PoE.
+    P14 -> U6+ pasillo -> switch GE7, paso de PoE.
+    P15 -> U6 Pro salón -> switch GE8, paso de PoE.
+    P19 -> Raspberry Pi / NUT -> MikroTik ether13.
+    Se corrigen las referencias antiguas P13/P14 para los AP.
+
+    El panel es pasivo: no conmuta ni tiene una velocidad electrónica propia.
+    El valor 1 Gb/s de los puertos representa los enlaces documentados.
+    Las conexiones Ethernet se dibujan entre equipos activos y llevan el puerto
+    del panel como etiqueta; no se duplican como si el panel fuera un switch.
+- kind: Other
+  model: SMLight SLZB-06
+  description: Coordinador Zigbee por Ethernet y PoE
+  ports:
+  - type: rj45
+    speed: 0.1
+    count: 1
+  name: LAB-smlight.zb
+  tags:
+  - iot
+  - zigbee
+  - coordinator
+  - home-assistant
+  labels:
+    management.ip: 10.0.50.240
+    patch-panel: P13
+    link.observed.mbps: 100
+  notes: |
+    SMLight SLZB-06, coordinador Zigbee por Ethernet para Home Assistant.
+    Conexión: switch GE6 -> P13 -> coordinador; alimentación por PoE.
+    VLAN50. Reserva DHCP del diagrama: 10.0.50.240.
+    Montado en pared. El inventario anterior lo clasificaba como AccessPoint.
+    Se clasifica como Other para identificarlo como coordinador Zigbee.
+    GE6 negocia 100 Mb/s full duplex en ambas capturas del Cisco.
+    El modelo SLZB-06 utiliza Fast Ethernet; se corrige el valor anterior de 1 Gb/s.
+- kind: Other
+  model: Philips Hue Bridge
+  description: Puente de iluminación Zigbee
+  ports:
+  - type: rj45
+    speed: 0.1
+    count: 1
+  name: LAB-hue-01.zb
+  tags:
+  - iot
+  - zigbee
+  - hue
+  labels:
+    management.ip: 10.0.50.254
+    patch-panel: P12
+    link.observed.mbps: 100
+  notes: |
+    Philips Hue Bridge; puente de iluminación Zigbee, en balda IoT.
+    Conexión: MikroTik ether11 -> P12 -> Hue Bridge, VLAN50.
+    Reserva DHCP confirmada: 10.0.50.254, MAC XX:XX:XX:XX:XX:XX, estado bound.
+    El enlace ether11 negocia 100 Mb/s full duplex.
+    Alimentación con adaptador DC, sin PoE.
+    Se clasifica como Other para distinguirlo de los AP Wi-Fi.
+    El extremo remoto de ether11 anuncia 10/100 Mb/s; generación exacta del Bridge pendiente.
+- kind: Desktop
+  ports:
+  - type: rj45
+    speed: 0.1
+    count: 1
+  name: LAB-philips-01.tv
+  tags:
+  - tv
+  - philips
+  - android-tv
+  - ambilight
+  - iot
+  labels:
+    management.ip: 10.0.50.227
+    patch-panel: P11
+    connection.verification: direct ether9 via P11 confirmed by owner
+    power.observed: off (owner, 2026-11-06)
+    link.observed.mbps: 100
+  notes: |
+    Televisor Philips Android TV / Ambilight.
+    Conexión: MikroTik ether9 -> patch panel P11 -> televisor, VLAN50.
+    Reserva DHCP actual TV Salon: 10.0.50.227, MAC XX:XX:XX:XX:XX:XX,
+    estado bound y class-id android-dhcp-12, verificado en el MikroTik.
+    No hay concesión DHCP .241 en la consulta actual; se corrige el dibujo.
+    El propietario confirma el enlace directo ether9 -> P11 -> TV y que
+    el televisor estaba apagado durante la captura del 06-11-2026.
+    La consulta de FDB de la TV no devuelve entrada; el ARP de .227 figura failed.
+    La tabla mostraba tres Echo Dot por ether9; queda como observación puntual,
+    sin reinterpretar la conexión física confirmada por el propietario.
+    Última plataforma documentada: TPM191E, Android 12.
+    CleanYourTV como launcher, Google TV Launcher deshabilitado; integración
+    Home Assistant con Wake-on-LAN documentada en conversaciones anteriores.
+    Modelo comercial pendiente. ether9 negocia 100 Mb/s full duplex y el extremo
+    remoto anuncia 10/100 Mb/s; se corrige el valor anterior de 1 Gb/s.
+- kind: Server
+  ram:
+    size: 32
+  cpus:
+  - model: Intel Core i3-N305
+    cores: 8
+    threads: 8
+  drives:
+  - type: nvme
+    size: 512
+  ports:
+  - type: rj45
+    speed: 2.5
+    count: 4
+  - type: rj45
+    speed: 2.5
+    count: 4
+  name: LAB-proxmox-02.srv
+  tags:
+  - proxmox
+  - mars
+  - hunsn
+  labels:
+    hostname: mars
+    management.ip: 10.0.10.26
+    nas.cidr: 10.10.10.3/29
+    nic.additional.state: installed-unused
+    network.observed: 2026-11-06
+    nic.driver: igc
+    nic.model: Intel I226-V
+    port.ETH0.interface: nic4
+    port.ETH0.bridge: vmbr0
+    port.ETH0.pci: 0000:09:00.0
+    port.ETH0.link.observed: 1000
+    port.ETH1.interface: nic5
+    port.ETH1.bridge: vmbr1
+    port.ETH1.pci: 0000:0a:00.0
+    port.ETH1.link.observed: no-carrier
+    port.ETH2.interface: nic6
+    port.ETH2.bridge: vmbr2
+    port.ETH2.pci: 0000:0b:00.0
+    port.ETH2.link.observed: 1000
+    port.ETH3.interface: nic7
+    port.ETH3.bridge: vmbrNAS
+    port.ETH3.pci: 0000:0c:00.0
+    port.ETH3.link.observed: 2500
+    port.ETH4.interface: nic0
+    port.ETH4.bridge: ''
+    port.ETH4.pci: 0000:04:00.0
+    port.ETH4.link.observed: unused
+    port.ETH5.interface: nic1
+    port.ETH5.bridge: ''
+    port.ETH5.pci: 0000:05:00.0
+    port.ETH5.link.observed: unused
+    port.ETH6.interface: nic2
+    port.ETH6.bridge: ''
+    port.ETH6.pci: 0000:07:00.0
+    port.ETH6.link.observed: unused
+    port.ETH7.interface: nic3
+    port.ETH7.bridge: ''
+    port.ETH7.pci: 0000:08:00.0
+    port.ETH7.link.observed: unused
+  notes: |
+    ## Identidad y función
+    Modelo indicado en el diagrama: HUNSN NRJ55k. Hostname: mars.
+    Proxmox principal, independiente de earth; no hay clúster ni QDevice.
+    Gestión: 10.0.10.26/24; gateway 10.0.10.1.
+    CPU i3-N305, 32 GB RAM y NVMe de 512 GB según el diagrama.
+    Modelo y SN del NVMe pendientes.
+
+    ## Ethernet: contraste con las salidas de mars del 06-11-2026
+    Las ocho interfaces son Intel I226-V [8086:125c], controlador igc,
+    y todas admiten 2500baseT/Full. Se corrige la clasificación inicial de
+    ETH0-ETH3 como puertos limitados a 1 Gb/s: esa es la velocidad negociada
+    con el Cisco, no la capacidad máxima del hardware.
+    Grupo 0: cuatro puertos integrados de 2,5 Gb/s, ETH0-ETH3.
+      Índice 0 = ETH0: gestión, vmbr0 -> switch GE2.
+      Índice 1 = ETH1: destino histórico del puerto superior de earth,
+                        vmbr1 / Wake-on-LAN; cable actual pendiente.
+      Índice 2 = ETH2: trunk, vmbr2 -> switch GE4.
+      Índice 3 = ETH3: enlace NAS, vmbrNAS -> QNAP puerto 4.
+    Grupo 1: tarjeta Intel adicional, cuatro puertos de 2,5 Gb/s, ETH4-ETH7.
+      Índices 0, 1, 2, 3 = ETH4, ETH5, ETH6, ETH7 respectivamente.
+    La tarjeta adicional sigue instalada y está SIN USAR. Se intentó
+    desactivarla para reducir consumo; no se documenta como desactivada.
+    nic0-nic3 aparecen administrativamente DOWN y sin enlace detectado;
+    los cuatro controladores siguen presentes en PCI y con driver igc.
+
+    ## Correspondencia exacta de nombres, MAC y PCI
+    ETH0 = nic4, XX:XX:XX:XX:XX:XX, PCI 0000:09:00.0, vmbr0.
+    ETH1 = nic5, XX:XX:XX:XX:XX:XX, PCI 0000:0a:00.0, vmbr1.
+    ETH2 = nic6, XX:XX:XX:XX:XX:XX, PCI 0000:0b:00.0, vmbr2.
+    ETH3 = nic7, XX:XX:XX:XX:XX:XX, PCI 0000:0c:00.0, vmbrNAS.
+    ETH4 = nic0, XX:XX:XX:XX:XX:XX, PCI 0000:04:00.0, sin bridge.
+    ETH5 = nic1, XX:XX:XX:XX:XX:XX, PCI 0000:05:00.0, sin bridge.
+    ETH6 = nic2, XX:XX:XX:XX:XX:XX, PCI 0000:07:00.0, sin bridge.
+    ETH7 = nic3, XX:XX:XX:XX:XX:XX, PCI 0000:08:00.0, sin bridge.
+    Firmware informado: nic0-nic3 2014:8877; nic4-nic7 2013:8877.
+
+    ## Estado de los enlaces en la captura
+    ETH0/nic4 y ETH2/nic6: 1000 Mb/s, full duplex, enlace detectado.
+    ETH3/nic7: 2500 Mb/s, full duplex, enlace detectado.
+    ETH1/nic5: habilitada administrativamente, sin portadora detectada.
+    El comentario de vmbr1 sigue indicando WoL hacia el puerto superior de earth.
+    La falta de portadora no permite establecer si el cable está desconectado
+    o si el extremo remoto está sin enlace.
+
+    ## Bridges y VLAN efectivos
+    vmbr0 -> nic4: gestión 10.0.10.26/24, gateway 10.0.10.1.
+    vmbr1 -> nic5: sin IP, enlace WoL documentado.
+    vmbr2 -> nic6: bridge VLAN-aware, bridge-vids 2-4094;
+      en el puerto nic6 figuran PVID1 sin etiquetar y VLAN 2-4094 etiquetadas.
+    vmbrNAS -> nic7: 10.10.10.3/29, sin filtrado VLAN.
+    Solo vmbr2 tiene vlan_filtering=1; vmbr0, vmbr1 y vmbrNAS tienen valor 0.
+    Los cuatro bridges tienen MTU1500, STP desactivado y forward-delay0.
+    La VLAN1 interna de los bridges sin filtrado no acredita una VLAN1 en el
+    switch. La VLAN de acceso de gestión se determina en el extremo Cisco.
+
+    Tabla de puertos virtuales activos observada:
+    VM100 net0 / tap100i0 -> vmbr2, VLAN31.
+    VM100 net1 / tap100i1 -> vmbr2, VLAN50.
+    VM100 net2 / tap100i2 -> vmbrNAS, sin etiqueta VLAN.
+    VM666 net0 / tap666i0 -> vmbr2, VLAN30.
+    LXC101 net0 / veth101i0 -> vmbr2, VLAN10.
+    LXC102 net0 / veth102i0 -> vmbr2, VLAN31.
+    Las MAC de tap/veth del host no se confunden con las MAC de los invitados.
+
+    ## Red NAS actual
+    10.10.10.0/29 (255.255.255.248):
+    - QNAP: 10.10.10.1/29.
+    - VM Ubuntu / docker-server: 10.10.10.2/29.
+    - Host mars / vmbrNAS: 10.10.10.3/29.
+    El enlace físico por ETH3 está negociado a 2,5 Gb/s full duplex.
+    La máscara /30 y el uso de ETH7 del dibujo quedan sustituidos.
+
+    ## Cargas identificadas en las últimas capturas
+    VM100 docker-server; VM666 Kali; VM200 MikrotikCHR detenida;
+    LXC101 unifi-controller; LXC102 Zabbix/Grafana.
+    Configuraciones de los cinco invitados recibidas el 06-11-2026:
+    VM100: 4 vCPU, 16 GiB, disco 65 GiB, arranque automático.
+    VM200: 1 vCPU, 1 GiB, disco 10368 MiB; detenida, ambas NIC link_down=1.
+    VM666: 3 vCPU, 6 GiB, disco 40 GiB, arranque automático.
+    LXC101: 1 vCPU, 2 GiB, rootfs15 GiB, swap2 GiB, arranque automático.
+    LXC102: 2 vCPU, 4 GiB, rootfs32 GiB, swap1 GiB, arranque automático.
+- kind: Server
+  ram:
+    size: 16
+  cpus:
+  - model: Marvell OCTEON TX2 CN9131 Cortex-A72 @ 2.2GHz
+    cores: 4
+    threads: 4
+  drives:
+  - type: nvme
+    size: 256
+  - type: nvme
+    size: 256
+  - type: hdd
+    size: 4000
+  - type: hdd
+    size: 4000
+  ports:
+  - type: sfp+
+    speed: 10
+    count: 2
+  - type: rj45
+    speed: 2.5
+    count: 2
+  name: LAB-qnap-01.nas
+  tags:
+  - qnap
+  - nas
+  - storage
+  labels:
+    model: TS-435XeU
+    hostname: nas.example.com
+    display.name: QNAP-lab
+    management.ip: 10.0.10.5
+    nas.cidr: 10.10.10.1/29
+    adapter3.cidr: 10.0.10.5/24
+    adapter3.ip-method: static
+    adapter3.gateway: 10.0.10.1
+    adapter3.dns.primary: 10.0.10.1
+    adapter3.dns.secondary: 10.0.31.254
+    adapter3.link.mbps: 1000
+    adapter4.cidr: 10.10.10.1/29
+    adapter4.ip-method: static
+    adapter4.gateway: none
+    adapter4.link.mbps: 2500
+    network.mtu: 1500
+    network.vlan-tagging: none on adapters3/4
+    drive.m2-1.model: Sabrent
+    drive.m2-1.firmware: RKT343.4
+    drive.m2-2.model: Sabrent
+    drive.m2-2.firmware: RKT303.3
+    drive.sata1.model: ST4000VN006-3CW104
+    drive.sata2.model: ST4000VN006-3CW104
+    drive.sata3.state: empty
+    drive.sata4.state: empty
+    configuration.observed: 2026-11-06
+    storage.hdd.raid: RAID1
+    storage.nvme.raid: RAID1
+  notes: |
+    ## Hardware y función
+    QNAP TS-435XeU. Gestión: 10.0.10.5/24.
+    Nombre mostrado: QNAP-lab; host mostrado: nas.example.com.
+    NAS separado para datos y almacenamiento compartido.
+    Marvell OCTEON TX2 CN9131, Cortex-A72 de cuatro núcleos a 2,2 GHz.
+    RAM instalada: 1 x 16 GB DDR4 SODIMM, según el diagrama.
+
+    ## Discos físicos y ranuras
+    M.2 2280, ranura 1: Sabrent NVMe 256 GB, 238,47 GB mostrados por QTS.
+      SN <redacted>; firmware RKT343.4.
+    M.2 2280, ranura 2: Sabrent NVMe 256 GB, 238,47 GB mostrados por QTS.
+      SN <redacted>; firmware RKT303.3.
+    La familia Rocket procede del diagrama; la GUI solo identifica modelo Sabrent.
+    Las dos series se transcriben uniendo el último carácter que la GUI muestra
+    en una segunda línea: 6 para la ranura1 y9 para la ranura2.
+    Ambos NVMe figuran como Datos y con enlace PCIe Gen3x1 en la captura.
+    Vida útil estimada capturada: 96% / 94%; no son valores de monitorización en vivo.
+    Bandeja 1: Seagate IronWolf 4 TB, ST4000VN006-3CW104; SN <redacted>.
+    Bandeja 2: Seagate IronWolf 4 TB, ST4000VN006-3CW104; SN <redacted>.
+    Los discos de las bandejas 1 y 2 proceden del antiguo TrueNAS de earth.
+    Bandejas3 y4: vacías, confirmado por el propietario y las capturas.
+    Hay DOS IronWolf, no tres. La ampliación con un tercero se descartó al
+    contratar Drime Cloud con6 TB; no se incluye ese disco previsto como instalado.
+    Inventario físico actual: 2HDD + 2NVMe; cuatro unidades instaladas.
+
+    ## Volúmenes observados
+    Main: preparado, volumen Thick, capacidad mostrada2,78 TB.
+    NVMe-System: preparado, volumen Thick, capacidad mostrada98,20 GB.
+    La captura muestra0 instantáneas y sin programas de instantáneas en ambos.
+    El propietario confirma dos grupos RAID1 independientes:
+    - Los dos IronWolf forman el RAID1 de HDD para los datos de Main.
+    - Los dos NVMe forman otro RAID1 independiente para NVMe-System.
+    Los nombres/IDs concretos de los conjuntos no se han aportado.
+
+    ## Puertos: respetar la numeración real QNAP
+    Grupo 0, tipo sfp+, índices 0 y 1: puertos QNAP 1 y 2, 10 Gb/s.
+    Grupo 1, tipo rj45, índice 0: puerto QNAP 3, 2,5 Gb/s -> switch GE5.
+    Grupo 1, tipo rj45, índice 1: puerto QNAP 4, 2,5 Gb/s -> mars ETH3.
+    Las capturas de Network del 06-11-2026 verifican:
+    - Adaptadores1/2: SFP+10 Gb/s, desconectados, sin IP, MTU1500.
+    - Adaptador3: Marvell CN913X integrado, MACXX:XX:XX:XX:XX:XX;
+      IP estática10.0.10.5/24, gateway10.0.10.1;
+      DNS primario10.0.10.1, secundario10.0.31.254;
+      enlace1 Gb/s, MTU1500, sin etiqueta VLAN en el NAS.
+    - Adaptador4: Marvell CN913X integrado, MACXX:XX:XX:XX:XX:XX;
+      IP estática10.10.10.1/29, sin gateway ni DNS;
+      enlace2,5 Gb/s, MTU1500, sin etiqueta VLAN en el NAS.
+    El selector automático de gateway del sistema utiliza el adaptador3.
+    La interfaz muestra el servicio WoL en los adaptadores3 y4.
+    Los nombres de dispositivos Linux del QNAP no se deducen de la numeración
+    de adaptadores de la GUI y no se inventan.
+    En el switch el enlace de gestión está limitado a 1 Gb/s;
+    el enlace NAS está negociado a 2,5 Gb/s full duplex en mars ETH3/nic7.
+    Dirección NAS: 10.10.10.1/29.
+    Referencias del fabricante para puertos y numeración:
+    https://www.qnap.com/es-es/product/ts-435xeu/specs/hardware
+    https://eu1.qnap.com/TechnicalDocument/Storage/SMB%20NAS/ts-435xeu/ts-435xeu-ug-01-es-es.pdf
+
+    ## Copias recuperadas del contexto del 03-04/11/2026
+    Export NFS /backups, accesible desde 10.10.10.1.
+    Backups Proxmox organizados en proxmox/mars/docker-server,
+    proxmox/mars/unifi-controller y proxmox/mars/zabbix-grafana.
+    Los nombres qnap-docker, qnap-unifi y qnap-zabbix son almacenamientos
+    de copias; no se afirma que los discos de las VM estén alojados ahí.
+- kind: Other
+  description: Router del operador / acceso WAN
+  name: LAB-isp-01.router
+  tags:
+  - wan
+  - isp
+  notes: |
+    Router del operador representado en el diagrama, modelo pendiente.
+    IP LAN 192.168.1.1/24. Entrega por DHCP 192.168.1.128/24 a ether16 MikroTik.
+    Uplink a la ONT GPON.
+    Redirecciones indicadas en el dibujo hacia 192.168.1.128:
+    TCP80 -> 80; TCP443 -> 443; TCP/UDP51820 -> 51820.
+    No se atribuye el modelo o el operador de capturas históricas.
+    No se crean puertos indexados: su numeración física no está identificada.
+- kind: Other
+  description: ONT GPON
+  name: LAB-isp-01.ont
+  tags:
+  - wan
+  - ont
+  notes: |
+    ONT GPON del diagrama. Modelo y SN pendientes.
+    Cadena de acceso: fibra GPON -> ONT -> router del operador -> MikroTik ether16.
+    No se inventan puertos físicos ni datos de aprovisionamiento.
+- kind: System
+  type: Hypervisor
+  os: Proxmox VE
+  ip: 10.0.10.16
+  name: earth
+  notes: |
+    Proxmox independiente del servidor antiguo. Sin clúster ni QDevice.
+    Interfaz web: https://10.0.10.16:8006
+    Aloja Moon / PBS y Windows de family; ambos con arranque automático.
+    Las cargas antiguas migradas a mars se representan bajo mars.
+    TrueNAS ya no existe.
+  runsOn:
+  - LAB-proxmox-01.srv
+- kind: System
+  type: Hypervisor
+  os: Proxmox VE
+  ip: 10.0.10.26
+  name: mars
+  labels:
+    nas.cidr: 10.10.10.3/29
+  notes: |
+    Proxmox principal del HUNSN. Interfaz web: https://10.0.10.26:8006
+    IP adicional NAS en vmbrNAS: 10.10.10.3/29, sobre ETH3.
+    Últimas cargas recuperadas: VM100, VM200, VM666, LXC101 y LXC102.
+    Almacenamiento de copias PBS moon-backup y destinos NFS del QNAP.
+    No forma parte de un clúster.
+  runsOn:
+  - LAB-proxmox-02.srv
+- kind: System
+  type: VM
+  os: Proxmox Backup Server
+  ip: 10.0.10.36
+  name: Moon
+  labels:
+    onboot: true
+    pbs.datastore: moon-backup
+  notes: |
+    Nodo PBS llamado Moon, ejecutado como máquina virtual dentro de earth.
+    Arranque automático al encender earth, confirmado por el propietario.
+    Endpoint recuperado: https://10.0.10.36:8007
+    Datastore documentado: moon-backup.
+    Copias en el espejo de los dos Intel S3520 de 960 GB instalados en earth.
+    VMID, CPU/RAM, disco del sistema, nombre del pool y ruta exacta del
+    datastore pendientes; se omiten en lugar de completar valores supuestos.
+    Los errores históricos de conectividad no se presentan como estado actual.
+  runsOn:
+  - earth
+- kind: System
+  type: VM
+  os: Windows 10
+  ip: 10.0.30.5
+  name: Win10-family
+  labels:
+    proxmox.vmid: 777
+    onboot: true
+  notes: |
+    VM777 Windows de family. Permanece alojada en earth.
+    Arranca automáticamente al encender earth, confirmado por el propietario.
+    Disco Samsung 870 EVO 500 GB asociado en el inventario anterior.
+    IP y servicio RDP según diagrama: 10.0.30.5:3389.
+    CPU/RAM y mecanismo de asignación del disco pendientes de revalidar.
+  runsOn:
+  - earth
+- kind: System
+  type: VM
+  os: Ubuntu Server 22.04 LTS
+  cores: 4
+  ram: 16
+  ip: 10.0.31.100
+  drives:
+  - size: 65
+  name: docker-server
+  labels:
+    proxmox.vmid: 100
+    hostname: lab-ubnt
+    nas.cidr: 10.10.10.2/29
+    onboot: true
+    last-documented-state: running
+    scsi0.volume: local-lvm:vm-100-disk-0
+    scsi0.backup: true
+    net0.bridge: vmbr2
+    net0.vlan: 31
+    net0.queues: 2
+    net0.guest-interface: enp6s18
+    net0.cidr: 10.0.31.100/24
+    net0.gateway: 10.0.31.1
+    net0.address-method: dhcp
+    net1.bridge: vmbr2
+    net1.vlan: 50
+    net1.guest-interface: enp6s19
+    net1.guest-ipv4: none-observed
+    net2.bridge: vmbrNAS
+    net2.vlan: untagged
+    net2.guest-interface: enp6s20
+    net2.cidr: 10.10.10.2/29
+    configuration.observed: 2026-11-06
+    net1.role: parent of dockervlan_iot
+  notes: |
+    VM100. Hostname del sistema invitado: lab-ubnt.
+    IP de servicios: 10.0.31.100/24; IP NAS: 10.10.10.2/29.
+    Red observada en mars el 06-11-2026:
+    - net0 / tap100i0 -> enp6s18: vmbr2, VLAN31, 10.0.31.100/24.
+    - net1 / tap100i1 -> enp6s19: vmbr2, VLAN50, sin IPv4 en Ubuntu.
+    - net2 / tap100i2 -> enp6s20: vmbrNAS, sin etiqueta VLAN, 10.10.10.2/29.
+    Las tres NIC del invitado aparecen UP. enp6s19 solo tiene IPv6 link-local
+    en Ubuntu y es la interfaz padre confirmada de dockervlan_iot.
+    Home Assistant tiene 10.0.50.97/24 en esa red, además de
+    10.0.31.252/24 en dockervlan, cuya interfaz padre es enp6s18.
+    La ruta por defecto se recibe por DHCP: 10.0.31.1 mediante enp6s18,
+    origen 10.0.31.100 y métrica100. La red 10.10.10.0/29 usa enp6s20.
+    Bridges Docker observados: 172.18.0.0/16, 172.19.0.0/16, 172.20.0.0/16,
+    172.22.0.0/16, 172.23.0.0/16, 172.24.0.0/16, 172.25.0.0/16 y 172.30.0.0/24.
+    docker0 conserva 172.17.0.1/16 y aparece sin portadora.
+    Los nombres y contenedores de las redes Docker se incorporan más abajo
+    desde docker network inspect recibido el 06-11-2026.
+    Las MAC de los extremos tap del host no son las MAC de las NIC del invitado.
+    Ejecuta Docker Engine; en este servidor se utiliza docker-compose.
+    Definiciones: /home/lab/docker-services/<servicio>/tasks/main.yml.
+    Persistencia local: /opt/docker-volumes/data/<servicio>/.
+    Montajes NFS del QNAP para datos, incluidos Nextcloud, Immich y Paperless.
+    Se mantienen las fotos dentro del almacenamiento nativo de Nextcloud.
+    Firefly III y Node-RED quedan excluidos del inventario actual.
+    Se incorporan como sistemas de tipo container los endpoints observados
+    en docker network inspect. Esta fuente acredita la pertenencia a redes;
+    no acredita imágenes, versiones, salud ni contenedores detenidos sin endpoint.
+
+    ## Configuración actual recibida
+    Confirmado: 4 vCPU (1 socket), 16384 MiB RAM, scsi0 65 GiB en local-lvm.
+    Arranque automático activado. scsi0 incluido en backups, replicate=0, ssd=1.
+    net0 usa VirtIO con 2 colas; net1/net2 VirtIO. VLAN50 sin IPv4 en el host Ubuntu.
+    dockervlan usa enp6s18; dockervlan_iot usa enp6s19. Home Assistant tiene IP en ambas.
+
+    ## Redes Docker observadas el 06-11-2026
+    bridge: driver=bridge, subnet=172.17.0.0/16, gateway=172.17.0.1, bridge=docker0
+    dockervlan: driver=ipvlan, subnet=10.0.31.0/24, gateway=10.0.31.1, parent=enp6s18, vlan=31
+    dockervlan_iot: driver=ipvlan, subnet=10.0.50.0/24, gateway=10.0.50.1, parent=enp6s19, vlan=50
+    host: driver=host
+    monitor_net: driver=bridge, subnet=172.30.0.0/24, gateway=172.30.0.1, bridge=br-4257275a2669
+    none: driver=null
+    personas_personas-internal: driver=bridge, subnet=172.22.0.0/16, gateway=172.22.0.1, bridge=br-f31691551fda
+    securo_securo-internal: driver=bridge, subnet=172.23.0.0/16, gateway=172.23.0.1, bridge=br-cdf3c005b2aa
+    tasks_bookstack_internal: driver=bridge, subnet=172.19.0.0/16, gateway=172.19.0.1, bridge=br-8d85385c4af8
+    tasks_default: driver=bridge, subnet=172.18.0.0/16, gateway=172.18.0.1, bridge=br-4c65fd9c8a2e
+    tasks_nextcloud_internal: driver=bridge, subnet=172.20.0.0/16, gateway=172.20.0.1, bridge=br-7bf6cec7e6cf
+    tasks_planka_internal: driver=bridge, subnet=172.24.0.0/16, gateway=172.24.0.1, bridge=br-8b82bd4af4b3
+    tasks_xwiki_internal: driver=bridge, subnet=172.25.0.0/16, gateway=172.25.0.1, bridge=br-986f9a003948
+  runsOn:
+  - mars
+- kind: System
+  type: VM
+  os: Kali Linux
+  cores: 3
+  ram: 6
+  drives:
+  - size: 40
+  name: Kali
+  labels:
+    proxmox.vmid: 666
+    onboot: true
+    last-documented-state: running
+    scsi0.volume: local-lvm:vm-666-disk-0
+    net0.bridge: vmbr2
+    net0.vlan: 30
+    configuration.observed: 2026-11-06
+  notes: |
+    VM666, Kali en mars; dirección por DHCP según el diagrama.
+    Interfaz virtual net0 / tap666i0 conectada a vmbr2, VLAN30,
+    según la tabla efectiva de mars del 06-11-2026.
+    Entorno documentado recientemente: X11 / XFCE.
+    
+
+    ## Configuración actual recibida
+    Confirmado: 3 vCPU (1 socket), 6144 MiB RAM, scsi0 40 GiB, iothread=1.
+    Arranque automático activado. NIC VirtIO en VLAN30; IP por DHCP según diagrama.
+  runsOn:
+  - mars
+- kind: System
+  type: VM
+  os: RouterOS CHR
+  cores: 1
+  ram: 1
+  drives:
+  - size: 10
+  name: MikrotikCHR-7.9.2
+  labels:
+    proxmox.vmid: 200
+    last-documented-state: stopped
+    scsi1.volume: local-lvm:vm-200-disk-0
+    onboot: not-explicitly-set
+    net1.bridge: vmbr1
+    net1.link_down: true
+    net2.bridge: vmbr2
+    net2.link_down: true
+    configuration.observed: 2026-11-06
+  notes: |
+    VM200, router virtual antiguo. Detenida en el diagrama y las últimas capturas.
+    El routing actual lo realiza el CCR2004 físico.
+    7.9.2 forma parte del nombre histórico de la VM; no confirma la versión
+    del sistema instalado. No se documenta como router operativo.
+
+    ## Configuración actual recibida
+    Confirmado: 1 vCPU (1 socket), 1024 MiB RAM, scsi1 10368 MiB, discard=on.
+    Ambas NIC VirtIO están desconectadas por configuración (link_down=1).
+    No aparece una opción onboot explícita en la salida recibida.
+  runsOn:
+  - mars
+- kind: System
+  type: container
+  os: Linux / LXC
+  cores: 1
+  ram: 2
+  ip: 10.0.10.10
+  drives:
+  - size: 15
+  name: unifi-controller
+  labels:
+    proxmox.vmid: 101
+    container.type: LXC
+    onboot: true
+    last-documented-state: running
+    swap.mib: 2048
+    rootfs.volume: local-lvm:vm-101-disk-0
+    net0.name: eth0
+    net0.bridge: vmbr2
+    net0.vlan: 10
+    net0.cidr: 10.0.10.10/24
+    net0.gateway: 10.0.10.1
+    configuration.observed: 2026-11-06
+  notes: |
+    LXC101, controlador UniFi. Alojado en mars.
+    net0 / veth101i0 conectado a vmbr2, VLAN10, observado el 06-11-2026.
+    Interfaz documentada: https://10.0.10.10:8443
+
+    ## Configuración actual recibida
+    Confirmado: 1 vCPU, 2048 MiB RAM, rootfs15 GiB en local-lvm, swap2048 MiB.
+    Arranque automático activado. eth0 tipo veth, IP estática y gateway de VLAN10.
+  runsOn:
+  - mars
+- kind: System
+  type: container
+  os: Linux / LXC
+  cores: 2
+  ram: 4
+  ip: 10.0.31.25
+  drives:
+  - size: 32
+  name: Zabbix-Grafana
+  labels:
+    proxmox.vmid: 102
+    container.type: LXC
+    onboot: true
+    last-documented-state: running
+    swap.mib: 1024
+    hostname: Zabbix
+    rootfs.volume: local-lvm:vm-102-disk-0
+    net0.name: eth0
+    net0.bridge: vmbr2
+    net0.vlan: 31
+    net0.cidr: 10.0.31.25/24
+    net0.gateway: 10.0.31.1
+    configuration.observed: 2026-11-06
+  notes: |
+    LXC102, Zabbix y Grafana. Alojado en mars.
+    net0 / veth102i0 conectado a vmbr2, VLAN31, observado el 06-11-2026.
+    IP según diagrama: 10.0.31.25/24.
+    Los recursos asignados se incorporan desde pct config; puertos web pendientes.
+
+    ## Configuración actual recibida
+    Confirmado: 2 vCPU, 4096 MiB RAM, rootfs32 GiB en local-lvm, swap1024 MiB.
+    Arranque automático activado. eth0 tipo veth, IP estática y gateway de VLAN31.
+  runsOn:
+  - mars
+- kind: System
+  type: Baremetal
+  os: QNAP QTS
+  ip: 10.0.10.5
+  name: QNAP-QTS
+  labels:
+    nas.cidr: 10.10.10.1/29
+  notes: |
+    Sistema NAS del QNAP TS-435XeU.
+    Gestión 10.0.10.5/24 y enlace NAS 10.10.10.1/29.
+    Ambas IP estáticas confirmadas: adaptador3 / MACXX:XX:XX:XX:XX:XX a1 Gb/s,
+    adaptador4 / MACXX:XX:XX:XX:XX:XX a2,5 Gb/s; MTU1500, sin tagging en el NAS.
+    Gateway por adaptador3: 10.0.10.1. DNS10.0.10.1 y10.0.31.254.
+    Volúmenes observados: Main (Thick,2,78 TB) y NVMe-System (Thick,98,20 GB).
+    Dos NVMe y dos HDD instalados; bandejas3/4 vacías.
+    El propietario confirma RAID1 independiente para cada pareja: HDD y NVMe.
+    Versión de QTS y nombres/IDs de los conjuntos no aportados.
+  runsOn:
+  - LAB-qnap-01.nas
+- kind: System
+  type: Baremetal
+  os: Raspberry Pi OS
+  ip: 10.0.50.226
+  name: rpi3-nut
+  notes: |
+    Servidor NUT de la Raspberry Pi 3B, conectado por USB al SAI Legrand.
+    Reserva DHCP 10.0.50.226 según el diagrama confirmado.
+    No es QDevice ni miembro de un clúster Proxmox.
+  runsOn:
+  - LAB-rpi3-01.srv
+- kind: Service
+  network:
+    ip: 10.0.10.16
+    port: 8006
+    protocol: TCP
+    url: https://10.0.10.16:8006
+  name: Proxmox-earth
+  notes: |
+    Interfaz de administración de Proxmox VE en earth.
+  runsOn:
+  - earth
+- kind: Service
+  network:
+    ip: 10.0.10.26
+    port: 8006
+    protocol: TCP
+    url: https://10.0.10.26:8006
+  name: Proxmox-mars
+  notes: |
+    Interfaz de administración de Proxmox VE en mars.
+  runsOn:
+  - mars
+- kind: Service
+  network:
+    ip: 10.0.10.36
+    port: 8007
+    protocol: TCP
+    url: https://10.0.10.36:8007
+  name: PBS-Moon
+  notes: |
+    Proxmox Backup Server. Datastore moon-backup sobre los dos Intel de earth en espejo.
+  runsOn:
+  - Moon
+- kind: Service
+  network:
+    ip: 10.0.10.10
+    port: 8443
+    protocol: TCP
+    url: https://10.0.10.10:8443
+  name: UniFi
+  notes: |
+    Interfaz del controlador UniFi alojado en LXC101 de mars.
+  runsOn:
+  - unifi-controller
+- kind: System
+  type: container
+  ip: 10.0.31.254
+  name: adguardhome
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.254/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.254/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.130
+  name: authelia
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.130/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.130/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.149
+  name: bookstack
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.149/24
+    network.dockervlan.parent: enp6s18
+    network.tasks_bookstack_internal.driver: bridge
+    network.tasks_bookstack_internal.cidr: 172.19.0.3/16
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.149/24, parent enp6s18, VLAN31
+    - tasks_bookstack_internal (bridge): 172.19.0.3/16
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 172.19.0.2
+  name: bookstack-db
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.tasks_bookstack_internal.driver: bridge
+    network.tasks_bookstack_internal.cidr: 172.19.0.2/16
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - tasks_bookstack_internal (bridge): 172.19.0.2/16
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 172.30.0.3
+  name: cadvisor
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.monitor_net.driver: bridge
+    network.monitor_net.cidr: 172.30.0.3/24
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - monitor_net (bridge): 172.30.0.3/24
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.142
+  name: codeserver
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.142/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.142/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.131
+  name: drawio
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.131/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.131/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.133
+  name: duckdns
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.133/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.133/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.153
+  name: duplicati
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.153/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.153/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.252
+  name: homeassistant
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.252/24
+    network.dockervlan.parent: enp6s18
+    network.dockervlan_iot.driver: ipvlan
+    network.dockervlan_iot.cidr: 10.0.50.97/24
+    network.dockervlan_iot.parent: enp6s19
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.252/24, parent enp6s18, VLAN31
+    - dockervlan_iot (ipvlan): 10.0.50.97/24, parent enp6s19, VLAN50
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+    Acceso directo a VLAN31 y VLAN50 a través de dos redes ipvlan distintas.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.128
+  name: homepage
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.128/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.128/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.146
+  name: immich_machine_learning
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.146/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.146/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.132
+  name: immich_postgres
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.132/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.132/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.137
+  name: immich_redis
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.137/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.137/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.150
+  name: immich_server
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.150/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.150/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.140
+  name: it-tools
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.140/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.140/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.143
+  name: mariadb_homeassistant
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.143/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.143/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 172.20.0.2
+  name: mariadb_nextcloud
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.tasks_nextcloud_internal.driver: bridge
+    network.tasks_nextcloud_internal.cidr: 172.20.0.2/16
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - tasks_nextcloud_internal (bridge): 172.20.0.2/16
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.129
+  name: mqtt5
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.129/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.129/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.151
+  name: nextcloud
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.151/24
+    network.dockervlan.parent: enp6s18
+    network.tasks_nextcloud_internal.driver: bridge
+    network.tasks_nextcloud_internal.cidr: 172.20.0.3/16
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.151/24, parent enp6s18, VLAN31
+    - tasks_nextcloud_internal (bridge): 172.20.0.3/16
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  name: nodeexporter
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.host.driver: host
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - host (host): comparte la red del host Ubuntu; sin IP propia en esta red
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+    El texto invalid Prefix de la plantilla no es una dirección IP ni acredita un fallo de red.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.136
+  name: paperless
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.136/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.136/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.135
+  name: paperless-db
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.135/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.135/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.141
+  name: paperless-redis
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.141/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.141/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.134
+  name: planka
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.134/24
+    network.dockervlan.parent: enp6s18
+    network.tasks_planka_internal.driver: bridge
+    network.tasks_planka_internal.cidr: 172.24.0.2/16
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.134/24, parent enp6s18, VLAN31
+    - tasks_planka_internal (bridge): 172.24.0.2/16
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 172.24.0.3
+  name: planka-db
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.tasks_planka_internal.driver: bridge
+    network.tasks_planka_internal.cidr: 172.24.0.3/16
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - tasks_planka_internal (bridge): 172.24.0.3/16
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.26
+  name: prometheus
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.26/24
+    network.dockervlan.parent: enp6s18
+    network.monitor_net.driver: bridge
+    network.monitor_net.cidr: 172.30.0.2/24
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.26/24, parent enp6s18, VLAN31
+    - monitor_net (bridge): 172.30.0.2/24
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.147
+  name: rackpeek
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.147/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.147/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 172.23.0.5
+  name: securo-backend
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.securo_securo-internal.driver: bridge
+    network.securo_securo-internal.cidr: 172.23.0.5/16
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - securo_securo-internal (bridge): 172.23.0.5/16
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 172.23.0.6
+  name: securo-beat
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.securo_securo-internal.driver: bridge
+    network.securo_securo-internal.cidr: 172.23.0.6/16
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - securo_securo-internal (bridge): 172.23.0.6/16
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 172.23.0.2
+  name: securo-db
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.securo_securo-internal.driver: bridge
+    network.securo_securo-internal.cidr: 172.23.0.2/16
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - securo_securo-internal (bridge): 172.23.0.2/16
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.148
+  name: securo-frontend
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.148/24
+    network.dockervlan.parent: enp6s18
+    network.securo_securo-internal.driver: bridge
+    network.securo_securo-internal.cidr: 172.23.0.7/16
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.148/24, parent enp6s18, VLAN31
+    - securo_securo-internal (bridge): 172.23.0.7/16
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 172.23.0.3
+  name: securo-redis
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.securo_securo-internal.driver: bridge
+    network.securo_securo-internal.cidr: 172.23.0.3/16
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - securo_securo-internal (bridge): 172.23.0.3/16
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 172.23.0.4
+  name: securo-worker
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.securo_securo-internal.driver: bridge
+    network.securo_securo-internal.cidr: 172.23.0.4/16
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - securo_securo-internal (bridge): 172.23.0.4/16
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.144
+  name: speedtest-tracker
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.144/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.144/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.253
+  name: traefik
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.253/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.253/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.152
+  name: wallos
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.152/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.152/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 172.18.0.2
+  name: watchtower
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.tasks_default.driver: bridge
+    network.tasks_default.cidr: 172.18.0.2/16
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - tasks_default (bridge): 172.18.0.2/16
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.139
+  name: whoareyou-app
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.139/24
+    network.dockervlan.parent: enp6s18
+    network.personas_personas-internal.driver: bridge
+    network.personas_personas-internal.cidr: 172.22.0.3/16
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.139/24, parent enp6s18, VLAN31
+    - personas_personas-internal (bridge): 172.22.0.3/16
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 172.22.0.2
+  name: whoareyou-db
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.personas_personas-internal.driver: bridge
+    network.personas_personas-internal.cidr: 172.22.0.2/16
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - personas_personas-internal (bridge): 172.22.0.2/16
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.145
+  name: xwiki
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.145/24
+    network.dockervlan.parent: enp6s18
+    network.tasks_xwiki_internal.driver: bridge
+    network.tasks_xwiki_internal.cidr: 172.25.0.3/16
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.145/24, parent enp6s18, VLAN31
+    - tasks_xwiki_internal (bridge): 172.25.0.3/16
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 172.25.0.2
+  name: xwiki-db
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.tasks_xwiki_internal.driver: bridge
+    network.tasks_xwiki_internal.cidr: 172.25.0.2/16
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - tasks_xwiki_internal (bridge): 172.25.0.2/16
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: container
+  ip: 10.0.31.138
+  name: zigbee2mqtt
+  labels:
+    container.engine: Docker
+    network.observed: 2026-11-06
+    network.dockervlan.driver: ipvlan
+    network.dockervlan.cidr: 10.0.31.138/24
+    network.dockervlan.parent: enp6s18
+  notes: |
+    Contenedor Docker observado como endpoint de red en lab-ubnt / VM100 de mars.
+    Fuente: docker network inspect recibido el 06-11-2026.
+    Pertenencia a redes:
+    - dockervlan (ipvlan): 10.0.31.138/24, parent enp6s18, VLAN31
+    Imágenes, versiones y puertos de aplicación no se deducen de esta captura.
+  runsOn:
+  - docker-server
+- kind: System
+  type: embedded
+  os: RouterOS 7.25
+  cores: 4
+  ram: 4
+  ip: 10.0.10.1
+  name: RouterOS
+  labels:
+    architecture: arm64
+    revision: r2
+    firmware: 7.25
+  notes: |
+    RouterOS 7.25 del CCR2004 físico. Firmware actual y disponible 7.25.
+    Gestión 10.0.10.1, WAN dinámica 192.168.1.128/24, WireGuard 10.0.100.1/24.
+    Configuración de bridges y VLAN descrita en el recurso de hardware.
+  runsOn:
+  - LAB-01.rtr
+- kind: System
+  type: cloud
+  drives:
+  - size: 6000
+  name: Drime-Cloud-lab
+  tags:
+  - cloud
+  - backup
+  - drime
+  labels:
+    provider: Drime Cloud
+    storage.quota.tb: 6
+    capacity.kind: contracted cloud quota
+    configuration.confirmed: 2026-11-06
+  notes: |
+    Almacenamiento externo contratado: Drime Cloud, cuota6 TB.
+    El propietario descartó el tercer IronWolf previsto para el QNAP tras esta contratación.
+    La cuota es almacenamiento lógico remoto, no un disco físico del NAS.
+    Se ha trabajado con rclone y cifrado para copias externas desde Ubuntu.
+    No se presupone que todos los trabajos de copia o la retención estén automatizados.
+connections:
+- a:
+    resource: LAB-lan-01.sw
+    portGroup: 0
+    portIndex: 0
+  b:
+    resource: LAB-01.rtr
+    portGroup: 0
+    portIndex: 1
+  label: GE1 - ether2 | trunk VLAN 10,20,30,31,32,40,50
+  notes: 'Cisco GE1: mode=trunk; PVID=4095; tagged=10,20,30,31,32,40,50; untagged=none-shown. Fuente: tabla VLAN06-11-2026.'
+- a:
+    resource: LAB-lan-01.sw
+    portGroup: 0
+    portIndex: 1
+  b:
+    resource: LAB-proxmox-02.srv
+    portGroup: 0
+    portIndex: 0
+  label: GE2 - ETH0 | gestion mars / VLAN10
+  notes: |-
+    Cisco GE2: mode=access; PVID=10; tagged=none; untagged=10. Fuente: tabla VLAN06-11-2026.
+    Mars ETH0: Linux nic4; bridge vmbr0; MAC XX:XX:XX:XX:XX:XX; PCI 0000:09:00.0; capacidad2500 Mb/s; enlace observado=1000.
+- a:
+    resource: LAB-lan-01.sw
+    portGroup: 0
+    portIndex: 3
+  b:
+    resource: LAB-proxmox-02.srv
+    portGroup: 0
+    portIndex: 2
+  label: GE4 - ETH2 | trunk mars
+  notes: |-
+    Cisco GE4: mode=trunk; PVID=4095; tagged=10,20,30,31,32,40,50; untagged=none-shown. Fuente: tabla VLAN06-11-2026.
+    Mars ETH2: Linux nic6; bridge vmbr2; MAC XX:XX:XX:XX:XX:XX; PCI 0000:0b:00.0; capacidad2500 Mb/s; enlace observado=1000.
+- a:
+    resource: LAB-lan-01.sw
+    portGroup: 0
+    portIndex: 4
+  b:
+    resource: LAB-qnap-01.nas
+    portGroup: 1
+    portIndex: 0
+  label: GE5 - QNAP puerto 3 | gestion / VLAN10
+  notes: |-
+    Cisco GE5 accesoVLAN10/PVID10, 1 Gb/s full duplex. QNAP adaptador3 estático10.0.10.5/24, MACXX:XX:XX:XX:XX:XX, sin etiqueta VLAN, MTU1500. Ambos extremos verificados en capturas06-11-2026.
+    Cisco GE5: mode=access; PVID=10; tagged=none; untagged=10. Fuente: tabla VLAN06-11-2026.
+- a:
+    resource: LAB-lan-01.sw
+    portGroup: 0
+    portIndex: 5
+  b:
+    resource: LAB-smlight.zb
+    portGroup: 0
+    portIndex: 0
+  label: GE6 - P13 - SMLight | VLAN50 / PoE
+  notes: 'Cisco GE6: mode=access; PVID=50; tagged=none; untagged=50. Fuente: tabla VLAN06-11-2026.'
+- a:
+    resource: LAB-lan-01.sw
+    portGroup: 0
+    portIndex: 6
+  b:
+    resource: LAB-U6-plus.ap
+    portGroup: 0
+    portIndex: 0
+  label: GE7 - P14 - U6+ pasillo | nativa10 / tagged30,32,40,50 / PoE
+  notes: 'Cisco GE7: mode=trunk; PVID=10; tagged=30,32,40,50; untagged=10. Fuente: tabla VLAN06-11-2026.'
+- a:
+    resource: LAB-lan-01.sw
+    portGroup: 0
+    portIndex: 7
+  b:
+    resource: LAB-U6-pro.ap
+    portGroup: 0
+    portIndex: 0
+  label: GE8 - P15 - U6 Pro salon | nativa10 / tagged30,32,40,50 / PoE
+  notes: 'Cisco GE8: mode=trunk; PVID=10; tagged=30,32,40,50; untagged=10. Fuente: tabla VLAN06-11-2026.'
+- a:
+    resource: LAB-lan-01.sw
+    portGroup: 0
+    portIndex: 8
+  b:
+    resource: LAB-proxmox-01.srv
+    portGroup: 0
+    portIndex: 1
+  label: GE9 - earth PCIe inferior | trunk
+  notes: 'Cisco GE9: mode=trunk; PVID=4095; tagged=10,20,30,31,32,40,50; untagged=none-shown. Fuente: tabla VLAN06-11-2026.'
+- a:
+    resource: LAB-lan-01.sw
+    portGroup: 0
+    portIndex: 9
+  b:
+    resource: LAB-proxmox-01.srv
+    portGroup: 0
+    portIndex: 0
+  label: GE10 - earth integrada | gestion / VLAN10
+  notes: 'Cisco GE10: mode=access; PVID=10; tagged=none; untagged=10. Fuente: tabla VLAN06-11-2026.'
+- a:
+    resource: LAB-qnap-01.nas
+    portGroup: 1
+    portIndex: 1
+  b:
+    resource: LAB-proxmox-02.srv
+    portGroup: 0
+    portIndex: 3
+  label: QNAP puerto 4 - ETH3/nic7/vmbrNAS mars | NAS 10.10.10.0/29 | 2.5 Gb/s
+  notes: |-
+    QNAP adaptador4 MACXX:XX:XX:XX:XX:XX, estático10.10.10.1/29, sin gateway. Mars ETH3/nic7 MACXX:XX:XX:XX:XX:XX, bridgevmbrNAS10.10.10.3/29. VM100 conecta net2/enp6s20 con10.10.10.2/29 al mismo bridge. Enlace2,5 Gb/s full duplex y MTU1500, sin etiqueta VLAN.
+    Mars ETH3: Linux nic7; bridge vmbrNAS; MAC XX:XX:XX:XX:XX:XX; PCI 0000:0c:00.0; capacidad2500 Mb/s; enlace observado=2500.
+- a:
+    resource: LAB-01.rtr
+    portGroup: 0
+    portIndex: 8
+  b:
+    resource: LAB-philips-01.tv
+    portGroup: 0
+    portIndex: 0
+  label: ether9 - P11 - TV Philips | VLAN50 | 100 Mb/s
+  notes: Cableado directo confirmado por el propietario. TV apagada durante la captura; reserva DHCP10.0.50.227 / MACXX:XX:XX:XX:XX:XX. ether9 negocia100 Mb/s full duplex.
+- a:
+    resource: LAB-01.rtr
+    portGroup: 0
+    portIndex: 10
+  b:
+    resource: LAB-hue-01.zb
+    portGroup: 0
+    portIndex: 0
+  label: ether11 - P12 - Hue | VLAN50
+  notes: MAC XX:XX:XX:XX:XX:XX confirmada por FDB en ether11; DHCP10.0.50.254 bound, enlace100 Mb/s full duplex, captura06-11-2026.
+- a:
+    resource: LAB-01.rtr
+    portGroup: 0
+    portIndex: 12
+  b:
+    resource: LAB-rpi3-01.srv
+    portGroup: 0
+    portIndex: 0
+  label: ether13 - P19 - RPi NUT | VLAN50
+  notes: MAC XX:XX:XX:XX:XX:XX confirmada por FDB en ether13; DHCP10.0.50.226 bound, enlace100 Mb/s full duplex, captura06-11-2026.
+- a:
+    resource: LAB-proxmox-01.srv
+    portGroup: 0
+    portIndex: 2
+  b:
+    resource: LAB-proxmox-02.srv
+    portGroup: 0
+    portIndex: 1
+  label: 'WoL documentado: earth PCIe superior - mars ETH1/nic5/vmbr1'
+  notes: |-
+    El fichero /etc/network/interfaces actual de mars describe vmbr1/nic5/ETH1 como enlace WoL al puerto superior de earth. Mars nic5 MACXX:XX:XX:XX:XX:XX aparece habilitada pero sin portadora. Verificación física y estado del extremo earth pendientes por falta de acceso; no se afirma que el enlace esté activo.
+    Mars ETH1: Linux nic5; bridge vmbr1; MAC XX:XX:XX:XX:XX:XX; PCI 0000:0a:00.0; capacidad2500 Mb/s; enlace observado=no-carrier.

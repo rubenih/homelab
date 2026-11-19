@@ -1,0 +1,39 @@
+version: "3.3"
+
+services:
+  zigbee2mqtt:
+    image: koenkk/zigbee2mqtt
+    container_name: zigbee2mqtt
+    restart: unless-stopped
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+    volumes:
+      - /opt/docker-volumes/data/zigbee2mqtt:/app/data
+
+    #devices:
+    #  - "/dev/serial/by-id/usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20240124162743-if00:/dev/ttyACM0"
+
+    networks:
+      - dockervlan
+
+    environment:
+      - TZ=Europe/Madrid
+      - FRONTEND_URL=https://zigbee.example.com
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=dockervlan"
+      - "traefik.http.routers.zigbee2mqtt-rtr.entrypoints=websecure"
+      - "traefik.http.routers.zigbee2mqtt-rtr.rule=Host(`zigbee.example.com`)"
+      - "traefik.http.routers.zigbee2mqtt-rtr.tls=true"
+      - "traefik.http.services.zigbee2mqtt-svc.loadbalancer.server.port=8080"
+      - "traefik.http.routers.zigbee2mqtt-rtr.middlewares=authelia-auth@docker"
+
+networks:
+  dockervlan:
+    external: true

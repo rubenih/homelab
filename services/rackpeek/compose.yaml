@@ -1,0 +1,34 @@
+version: "3.3"
+services:
+  rackpeek:
+    image: aptacode/rackpeek:latest
+    container_name: rackpeek
+    networks:
+      - dockervlan
+    labels:
+      # Habilitar etiquetas específicas para WUD
+      - "wud.update=true"
+      
+      - "traefik.enable=true"
+      - "traefik.docker.network=dockervlan"
+      
+      # HTTP Routers
+      - "traefik.http.routers.rackpeek-rtr.entrypoints=websecure"
+      - "traefik.http.routers.rackpeek-rtr.rule=Host(`rackpeek.example.com`)"
+      - "traefik.http.routers.rackpeek-rtr.tls=true"
+      
+      ## HTTP Services
+      - "traefik.http.routers.rackpeek-rtr.service=rackpeek-svc"
+      - "traefik.http.services.rackpeek-svc.loadbalancer.server.port=8080"
+      - "traefik.http.routers.rackpeek-rtr.middlewares=authelia-auth@docker"
+
+      # LA ETIQUETA MÁGICA DE WATCHTOWER:
+      - "com.centurylinklabs.watchtower.enable=true"
+      
+    volumes:
+      - /opt/docker-volumes/data/rackpeek/config:/app/config
+    restart: unless-stopped
+
+networks:
+  dockervlan:
+    external: true

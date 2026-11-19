@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  nodeexporter:
+    image: prom/node-exporter:latest
+    container_name: nodeexporter
+    restart: unless-stopped
+    pid: host
+    network_mode: host
+    volumes:
+      - /:/rootfs:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+    command:
+      - '--path.rootfs=/rootfs'
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'

@@ -1,0 +1,27 @@
+version: "3.3"
+services:
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    container_name: audiobookshelf
+    networks:
+      - dockervlan
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Madrid
+    volumes:
+      - /opt/docker-volumes/data/audiobookshelf/config:/config
+      - /opt/docker-volumes/data/audiobookshelf/metadata:/metadata
+      - /mnt/media/audiolibros:/audiobooks
+    restart: unless-stopped
+    labels:
+      - "wud.update=true"
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "traefik.enable=true"
+      - "traefik.docker.network=dockervlan"
+      - "traefik.http.routers.audiobookshelf-rtr.entrypoints=websecure"
+      - "traefik.http.routers.audiobookshelf-rtr.rule=Host(`audiolibros.example.com`)"
+      - "traefik.http.routers.audiobookshelf-rtr.tls=true"
+      - "traefik.http.routers.audiobookshelf-rtr.service=audiobookshelf-svc"
+      - "traefik.http.services.audiobookshelf-svc.loadbalancer.server.port=80"
+      - "traefik.http.routers.audiobookshelf-rtr.middlewares=authelia-auth@docker"

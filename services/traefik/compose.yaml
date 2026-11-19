@@ -1,0 +1,102 @@
+version: "3.3"
+
+services:
+
+  traefik:
+    image: "traefik:v2.11"
+    container_name: "traefik"
+    privileged: true
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    networks:
+      dockervlan:
+        ipv4_address: 10.0.31.253
+    dns:
+      - "10.0.31.254"
+    dns_search: []
+
+    command:
+      # Global
+      - "--global.checkNewVersion=true"
+      - "--global.sendAnonymousUsage=false"
+
+      # EntryPoints
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.dns.address=:53/udp"
+      - "--entrypoints.mqtt.address=:1883"
+
+      # HTTP -> HTTPS redirect
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+
+      # Providers
+      - "--providers.docker=true"
+      - "--providers.docker.exposedByDefault=false"
+      - "--providers.file.directory=/rules"
+      - "--providers.file.watch=true"
+
+      # Dashboard & Logs
+      - "--api=true"
+      - "--api.insecure=true"
+      - "--log=true"
+      - "--log.level=INFO"
+      - "--log.filePath=/traefik.log"
+      - "--accessLog=true"
+      - "--accessLog.filePath=/access.log"
+      - "--accessLog.bufferingSize=100"
+      - "--accessLog.filters.statusCodes=204-299,400-499,500-599"
+
+      # ACME Cloudflare
+      - "--certificatesResolvers.dns-cloudflare.acme.email=admin@example.com"
+      - "--certificatesResolvers.dns-cloudflare.acme.storage=/acme.json"
+      - "--certificatesResolvers.dns-cloudflare.acme.dnschallenge.provider=cloudflare"
+      - "--certificatesResolvers.dns-cloudflare.acme.dnschallenge.delayBeforeCheck=30"
+      - "--certificatesResolvers.dns-cloudflare.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53"
+
+      # TLS insecure skip verify (opcional, si tienes backends internos con SSL self-signed)
+      - "--serverstransport.insecureskipverify=true"
+
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "/opt/docker-volumes/data/traefik/appdata/logs/traefik.log:/traefik.log"
+      - "/opt/docker-volumes/data/traefik/appdata/logs/access.log:/access.log"
+      - "/opt/docker-volumes/data/traefik/appdata/rules:/rules"
+      - "/opt/docker-volumes/data/traefik/appdata/acme/acme.json:/acme.json"
+
+    ports:
+      - "80:80/tcp"
+      - "443:443/tcp"
+      - "443:443/udp"
+      - "53:53/udp"
+      - "1883:1883/tcp"
+
+    environment:
+      - "CF_DNS_API_TOKEN_FILE=/run/secrets/cloudflare_dns_api_token"
+
+    secrets:
+      - cloudflare_dns_api_token
+
+    labels:
+      - "traefik.enable=true"
+
+      # Dashboard router
+      - "traefik.http.routers.traefik-rtr.entrypoints=websecure"
+      - "traefik.http.routers.traefik-rtr.rule=Host(`traefik.example.com`)"
+      - "traefik.http.routers.traefik-rtr.tls=true"
+      - "traefik.http.routers.traefik-rtr.tls.certresolver=dns-cloudflare"
+      - "traefik.http.routers.traefik-rtr.tls.domains[0].main=example.com"
+      - "traefik.http.routers.traefik-rtr.tls.domains[0].sans=*.example.com"
+      - "traefik.http.routers.traefik-rtr.service=api@internal"
+      - "traefik.http.services.traefik-svc.loadbalancer.server.port=80"
+
+      # Watchtower label
+      - "com.centurylinklabs.watchtower.enable=true"
+
+secrets:
+  cloudflare_dns_api_token:
+    file: /etc/lab-secrets/traefik/cloudflare_dns_api_token

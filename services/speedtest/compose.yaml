@@ -1,0 +1,41 @@
+version: "3.3"
+services:
+  speedtest-tracker:
+    image: lscr.io/linuxserver/speedtest-tracker:latest
+    container_name: speedtest-tracker
+    networks:
+      - dockervlan
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Madrid
+      - APP_KEY=base64:qPzR2yE5w8T4u1I9o0A7s3D6f9G2h5J8k1L4z7X0c3V=
+
+      # 👇 NUEVAS CONFIGURACIONES 👇
+      # Programación del test: Cada 1 horas en el minuto 0
+      - SPEEDTEST_SCHEDULE=0 * * * *
+
+      # Nombre de tu servidor (para que quede bonito en el dashboard)
+      - APP_NAME=lab Speedtest
+
+      # Forzar a que te muestre los datos en Mbps en lugar de MB/s
+      - DISPLAY_TIMEZONE=Europe/Madrid
+
+      # Escala máxima del gráfico en tu dashboard de Homepage (500Mbps)
+      - CHART_MAX_DOWNLOAD=500
+      - CHART_MAX_UPLOAD=500
+    volumes:
+      - /opt/docker-volumes/data/speedtest-tracker/config:/config
+    restart: unless-stopped
+    labels:
+      - "wud.update=true"
+      - "com.centurylinklabs.watchtower.enable=true"
+
+      - "traefik.enable=true"
+      - "traefik.docker.network=dockervlan"
+      - "traefik.http.routers.speedtest-rtr.entrypoints=websecure"
+      - "traefik.http.routers.speedtest-rtr.rule=Host(`speedtest.example.com`)"
+      - "traefik.http.routers.speedtest-rtr.tls=true"
+      - "traefik.http.routers.speedtest-rtr.service=speedtest-svc"
+      - "traefik.http.services.speedtest-svc.loadbalancer.server.port=80"
+      - "traefik.http.routers.speedtest-rtr.middlewares=authelia-auth@docker"

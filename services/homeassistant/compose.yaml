@@ -1,0 +1,79 @@
+version: "3"
+
+services:
+  # --- SERVICIO DE BASE DE DATOS ---
+  db_homeassistant:
+    image: mariadb:11.4                 # Versión específica de la base de datos para evitar cambios bruscos
+    container_name: mariadb_homeassistant
+    restart: always                     # Si falla, se reinicia sola. Si se apaga el servidor, arranca sola.
+    networks:
+      - dockervlan                      # Red interna para comunicarse con otros contenedores
+    volumes:
+      - /opt/docker-volumes/data/mariadb_homeassistant:/var/lib/mysql  # PERSISTENCIA: Aquí se guardan los datos reales de la DB
+    environment:
+      # Variables para configurar el usuario y contraseña iniciales de la base de datos
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/mariadb_root_password
+      - MARIADB_PASSWORD_FILE=/run/secrets/mariadb_homeassistant_password
+      - MYSQL_DATABASE=homeassistant
+      - MYSQL_USER=homeassistant
+
+  # --- SERVICIO PRINCIPAL DE HOME ASSISTANT ---
+    secrets:
+      - mariadb_root_password
+      - mariadb_homeassistant_password
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable  # Imagen oficial y estable. Usar 'pull' para actualizar.
+    container_name: homeassistant
+    privileged: true                    # Otorga acceso completo al hardware del host (necesario para USBs Zigbee, etc.)
+    restart: unless-stopped             # Arranca siempre, a menos que tú lo detengas manualmente con 'stop'
+    networks:
+      dockervlan:
+        ipv4_address: 10.0.31.252   # Le tengo que dar una IP fija a HA para poder habilitar la comunicacion con Alexa
+      dockervlan_iot:
+        ipv4_address: 10.0.50.97    # IPv4 en la VLAN50 para comunicarse con IoT devices.
+    environment:
+      - PUID=1000                       # ID de usuario Linux para evitar problemas de permisos de archivos
+      - PGID=1000                       # ID de grupo Linux
+      - TZ=Etc/UTC                      # Zona horaria del contenedor
+      # Datos para que HA sepa cómo conectarse a la base de datos definida arriba
+      - MYSQL_DATABASE=homeassistant
+      - MYSQL_USER=homeassistant
+      - MYSQL_HOST=db_homeassistant
+    links:
+      - db_homeassistant                # Asegura enlace directo con el contenedor de la DB
+
+    volumes:
+      # PERSISTENCIA CRÍTICA: Todo lo que configures (YAMLs, HACS, Backups) se guarda aquí.
+      # Si esta carpeta está a salvo, tu Home Assistant es inmortal.
+      - "/opt/docker-volumes/data/homeassistant/appdata/config:/config"
+      - "/etc/localtime:/etc/localtime:ro"  # Sincroniza la hora del contenedor con la del servidor
+      - "/var/run/docker.sock:/var/run/docker.sock" # Opcional: Permite a HA ver/controlar otros dockers
+    labels:
+      # --- CONFIGURACIÓN DE TRAEFIK (PROXY INVERSO) ---
+      # Habilita que este contenedor sea gestionado por Traefik
+      - "traefik.enable=true"
+      - "traefik.docker.network=dockervlan"
+      # Define el punto de entrada (normalmente HTTPS/websecure)
+      - "traefik.http.routers.homeassistant-rtr.entrypoints=websecure"
+      # Define la URL (dominio) que responderá a este servicio
+      - "traefik.http.routers.homeassistant-rtr.rule=Host(`homeassistant.example.com`)"
+      # Activa la gestión de certificados SSL/TLS
+      - "traefik.http.routers.homeassistant-rtr.tls=true"
+      # Enlace interno: Traefik envía el tráfico al puerto interno 8123
+      - "traefik.http.routers.homeassistant-rtr.service=homeassistant-svc"
+      - "traefik.http.services.homeassistant-svc.loadbalancer.server.port=8123"
+      
+      # LA ETIQUETA MÁGICA DE WATCHTOWER:
+      - "com.centurylinklabs.watchtower.enable=true"
+# --- DEFINICIÓN DE REDES ---
+networks:
+  dockervlan:
+    external: true  # Indica que la red ya existe (creada externamente), no debe crearla nueva.
+  dockervlan_iot:
+    external: true  # Indica que la red ya existe (creada externamente), no debe crearla nueva.
+
+secrets:
+  mariadb_root_password:
+    file: /etc/lab-secrets/homeassistant/mariadb_root_password
+  mariadb_homeassistant_password:
+    file: /etc/lab-secrets/homeassistant/mariadb_homeassistant_password

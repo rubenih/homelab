@@ -42,6 +42,7 @@ flowchart TB
 | 10 | MGMT | `10.0.10.0/24` | Hypervisors, backup server, switch, APs | Allow-list only |
 | 30 | ADMIN | `10.0.30.0/24` | Admin workstations | Yes |
 | 31 | SERVERS | `10.0.31.0/24` | VMs and containers (Traefik, apps, monitoring) | Yes |
+| 32 | ISOLATED | `10.0.32.0/24` | Devices with no Internet access | No |
 | 40 | GUEST | `10.0.40.0/24` | Guest Wi-Fi with captive portal | Yes, isolated |
 | 50 | IOT | `10.0.50.0/24` | Smart home, Zigbee coordinator, voice assistants | Yes |
 | — | WireGuard | `10.0.100.0/24` | Remote administration | Via lab |
@@ -64,20 +65,25 @@ Addressing convention: third octet = VLAN ID, `.1` = MikroTik gateway on every V
 |---|---|
 | MikroTik CCR2004-16G-2S+ | Router, firewall, WireGuard, DHCP, guest hotspot |
 | Cisco SG200 | Managed switch, VLAN trunking |
-| Proxmox VE hosts | Virtualization (VMs + LXC) |
-| Proxmox Backup Server | VM/LXC backups |
-| NAS | Storage |
-| UniFi APs | Wi-Fi, SSID per VLAN |
-| UPS + NUT | Graceful shutdown and power telemetry |
+| Proxmox VE host 1 · Intel N305, 32 GB, 8× 2.5 GbE | Main hypervisor: Docker VM, UniFi controller, monitoring LXC |
+| Proxmox VE host 2 · i5-6500, 48 GB | Proxmox Backup Server VM on a mirrored SSD datastore |
+| QNAP TS-435XeU | NAS: RAID1 HDD (data) + RAID1 NVMe; dedicated 2.5 GbE storage link to the main hypervisor (/29) |
+| UniFi U6 Pro + U6+ | Wi-Fi, one SSID per VLAN, PoE from the switch |
+| SMLIGHT SLZB-06 | Ethernet/PoE Zigbee coordinator for Home Assistant |
+| Legrand KEOR 800 VA UPS + Raspberry Pi (NUT) | Power telemetry and graceful shutdown |
+| 24-port Cat6 patch panel | Structured cabling, documented port by port |
 
 ## Monitoring
 
-Zabbix 7 + PostgreSQL + Grafana in an LXC, management-only on VLAN 10:
+- **Zabbix 7 + Grafana** (LXC): SNMP polling of the MikroTik and Cisco SG200, Zabbix agent 2 on the Proxmox hosts, UniFi APs, Home Assistant and the UPS via NUT.
+- **Prometheus + cAdvisor + node-exporter** for container and host metrics on the Docker VM.
+- **Speedtest Tracker** for WAN performance history.
 
-- SNMP: MikroTik, Cisco SG200
-- Zabbix agent 2: Proxmox hosts
-- Docker containers, Home Assistant, UniFi APs
-- UPS via NUT
+## Containers
+
+The Docker VM runs ~25 Compose stacks ([`services/`](services/)). Containers get their own address on VLAN 31 through an **ipvlan** network (and Home Assistant also on VLAN 50 for local IoT discovery), so the MikroTik firewall sees and filters each service individually. Databases sit on internal bridge networks, and credentials are passed as **Docker secrets** from files outside the repo.
+
+Highlights: Traefik, Authelia, AdGuard Home, Home Assistant, Zigbee2MQTT, Mosquitto, Nextcloud, Immich, Paperless-ngx, Prometheus.
 
 ## Documentation as code
 
@@ -88,7 +94,7 @@ The full inventory (hardware, services, systems, ports) lives in [`rackpeek/conf
 ```
 .
 ├── docs/                 # Design notes and diagrams
-├── services/             # Docker Compose stacks (with .env.example)
+├── services/             # Docker Compose stacks (secrets referenced, never included)
 ├── network/              # Sanitized MikroTik / switch configuration
 ├── rackpeek/config.yaml  # Inventory (documentation as code)
 └── .github/workflows/    # Secret scanning + RackPeek Pages deploy

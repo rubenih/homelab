@@ -1,0 +1,125 @@
+version: "3.8"
+
+services:
+  # ============================================================================
+  # 1. IMMICH SERVER: El corazón de la aplicación
+  # ============================================================================
+  # Este contenedor maneja la interfaz web, la API móvil y la lógica principal.
+  immich-server:
+    container_name: immich_server
+    # La versión se define en el archivo .env (IMMICH_VERSION=release)
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION}
+    environment:
+      - DB_HOSTNAME=immich_postgres
+      - REDIS_HOSTNAME=immich_redis
+      - DB_USERNAME=postgres
+      - DB_DATABASE_NAME=immich
+      - DB_PASSWORD_FILE=/run/secrets/immich_postgres_password
+    # Mapeo de Volúmenes:
+    volumes:
+      # [NAS] Aquí se guardan los originales y thumbnails (Definido en .env como /mnt/immich)
+      - ${UPLOAD_LOCATION}:/usr/src/app/upload
+      # Sincronización de hora con el servidor para que las fechas sean correctas
+      - /etc/localtime:/etc/localtime:ro
+    
+    # Carga las variables (contraseñas, rutas) del archivo .env adjunto
+    env_file:
+      - .env
+    
+    restart: always
+    
+    # Se conecta a tu red externa para hablar con Traefik
+    networks:
+      - dockervlan
+    
+    # Espera a que la base de datos y la caché estén listas antes de arrancar
+    depends_on:
+      - immich-redis
+      - immich-postgres
+    
+    # --- CONFIGURACIÓN DE TRAEFIK (ACCESO WEB) ---
+    labels:
+      - "traefik.enable=true"
+      # Definición de la URL (Host)
+      - "traefik.http.routers.immich-rtr.rule=Host(`fotos.example.com`)"
+      # Usar HTTPS (websecure)
+      - "traefik.http.routers.immich-rtr.entrypoints=websecure"
+      - "traefik.http.routers.immich-rtr.tls=true"
+      # Certificado automático con Cloudflare
+      - "traefik.http.routers.immich-rtr.tls.certresolver=dns-cloudflare"
+      
+      # Conexión interna: Traefik envía el tráfico al puerto 2283 de este contenedor
+      - "traefik.http.routers.immich-rtr.service=immich-svc"
+      - "traefik.http.services.immich-svc.loadbalancer.server.port=2283"
+      
+      # NOTA: NO usamos Watchtower aquí. Immich se debe actualizar manualmente 
+      # para evitar roturas por cambios de versión (Breaking Changes).
+
+  # ============================================================================
+  # 2. MACHINE LEARNING: El cerebro de la IA
+  # ============================================================================
+  # Se encarga del reconocimiento facial y la búsqueda inteligente ("gato", "playa").
+    secrets:
+      - immich_postgres_password
+  immich-machine-learning:
+    container_name: immich_machine_learning
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION}
+    volumes:
+      # Caché de modelos (se guarda en un volumen interno de Docker, no ocupa mucho)
+      - model-cache:/cache
+    env_file:
+      - .env
+    restart: always
+    networks:
+      - dockervlan
+
+  # ============================================================================
+  # 3. REDIS: La memoria rápida (Caché)
+  # ============================================================================
+  # Almacena tareas temporales y colas de trabajo para que la web vaya fluida.
+  immich-redis:
+    container_name: immich_redis
+    image: redis:6.2-alpine
+    restart: always
+    networks:
+      - dockervlan
+
+  # ============================================================================
+  # 4. POSTGRES: La base de datos
+  # ============================================================================
+  immich-postgres:
+    container_name: immich_postgres
+    # Imagen específica con extensiones vectoriales (pgvecto-rs)
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
+    
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/immich_postgres_password
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_DB: ${DB_DATABASE_NAME}
+      POSTGRES_INITDB_ARGS: '--data-checksums'
+    
+    volumes:
+      # [LOCAL] Base de datos en disco rápido local
+      - ${DB_DATA_LOCATION}:/var/lib/postgresql/data
+    
+    restart: always
+    networks:
+      - dockervlan
+    
+    shm_size: 128mb
+
+# ============================================================================
+# VOLÚMENES Y REDES 
+# ============================================================================
+    secrets:
+      - immich_postgres_password
+volumes:
+  model-cache:
+
+networks:
+  dockervlan:
+    external: true
+
+secrets:
+  immich_postgres_password:
+    file: /etc/lab-secrets/immich/postgres_password

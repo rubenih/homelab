@@ -1,0 +1,43 @@
+version: "3.3"
+services:
+  codeserver:
+    image: lscr.io/linuxserver/code-server:latest
+    container_name: codeserver
+    networks:
+      - dockervlan
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Madrid
+      - FILE__PASSWORD=/run/secrets/codeserver_password
+      - FILE__SUDO_PASSWORD=/run/secrets/codeserver_sudo_password
+    secrets:
+      - codeserver_password
+      - codeserver_sudo_password
+    labels:
+      - "wud.update=true"
+      - "com.centurylinklabs.watchtower.enable=true"
+      # Traefik Routing
+      - "traefik.enable=true"
+      - "traefik.docker.network=dockervlan"
+      - "traefik.http.routers.codeserver-rtr.entrypoints=websecure"
+      - "traefik.http.routers.codeserver-rtr.rule=Host(`code.example.com`)"
+      - "traefik.http.routers.codeserver-rtr.tls=true"
+      - "traefik.http.routers.codeserver-rtr.service=codeserver-svc"
+      - "traefik.http.services.codeserver-svc.loadbalancer.server.port=8443"
+      - "traefik.http.routers.codeserver-rtr.middlewares=authelia-auth@docker"
+    volumes:
+      # Datos de la app en tu ruta estándar de volúmenes
+      - /opt/docker-volumes/data/codeserver/config:/config
+      # Mapeo de tu carpeta de servicios para editarlos desde la web
+      - /home/lab/docker-services:/workspace
+      - /opt/docker-volumes/data:/workspace/data
+      # EXTRA: El socket de Docker para controlar tus contenedores desde la terminal web
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
+secrets:
+  codeserver_password:
+    file: /etc/lab-secrets/codeserver/password
+  codeserver_sudo_password:
+    file: /etc/lab-secrets/codeserver/sudo_password

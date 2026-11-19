@@ -1,0 +1,35 @@
+version: "3.7"
+services:
+  adguardhome:
+    image: adguard/adguardhome
+    pull_policy: always
+    container_name: adguardhome
+    restart: unless-stopped
+    networks:
+      dockervlan:
+        ipv4_address: 10.0.31.254
+
+    volumes:
+      - "/opt/docker-volumes/data/adguardhome/appdata/workdir:/opt/adguardhome/work"
+      - "/opt/docker-volumes/data/adguardhome/appdata/config:/opt/adguardhome/conf"
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=dockervlan"
+      
+      ## HTTP Routers
+      - "traefik.http.routers.adguard-rtr.entrypoints=websecure"
+      - "traefik.http.routers.adguard-rtr.rule=Host(`adguard.example.com`)"
+      - "traefik.http.routers.adguard-rtr.tls=true"
+      - "traefik.http.routers.adguard-rtr.tls.certresolver=dns-cloudflare" 
+      
+      ## UDP Routers (DNS)
+      - "traefik.udp.routers.adguard-rtr.entrypoints=dns"
+      - "traefik.udp.routers.adguard-rtr.service=dns-svc"
+      
+      ## Services Definitions
+      - "traefik.http.services.adguard-svc.loadbalancer.server.port=3000"
+      - "traefik.udp.services.dns-svc.loadbalancer.server.port=53"
+
+      # Watchtower
+      - "com.centurylinklabs.watchtower.enable=true"
