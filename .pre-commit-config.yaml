@@ -1,0 +1,16 @@
+# Instala una vez:  pipx install pre-commit && pre-commit install
+# Bloquea cualquier commit con secretos o con datos reales del lab.
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.2
+    hooks:
+      - id: gitleaks
+
+  - repo: local
+    hooks:
+      - id: no-real-lab-data
+        name: Bloquear IPs, dominios y MACs reales
+        # Los patrones viven en sanitize.local (ignorado por git), así no se publican
+        entry: scripts/check-real-data.sh
+        language: script
+        pass_filenames: true

@@ -1,0 +1,80 @@
+# Publica una vista de solo lectura de RackPeek en GitHub Pages.
+# La web es estática (Blazor WebAssembly): no conecta con el lab y el RackPeek real sigue siendo solo interno.
+# Fuente de datos: rackpeek/config.yaml de este repo (ya saneado, con marcadores de IP).
+name: RackPeek Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ["rackpeek/config.yaml", ".github/workflows/rackpeek-pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  RACKPEEK_REF: RackPeek-2.3.0   # versión fijada; súbela a mano tras probarla
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (este repo)
+        uses: actions/checkout@v4
+        with:
+          path: homelab
+
+      # Barrera de seguridad: si se cuela una IP real o un hostname público, no se publica nada
+      # Los patrones reales están en el secreto LAB_PATTERNS, no en este fichero público
+      - name: Comprobar que config.yaml está saneado
+        env:
+          LAB_PATTERNS: ${{ secrets.LAB_PATTERNS }}
+        run: |
+          if [ -z "$LAB_PATTERNS" ]; then echo "::error::Falta el secreto LAB_PATTERNS"; exit 1; fi
+          printf '%s\n' "$LAB_PATTERNS" 'PrivateKey|password|token|secret' > /tmp/patterns
+          if grep -nIiE -f /tmp/patterns homelab/rackpeek/config.yaml; then
+            echo "::error::config.yaml contiene datos que no deben publicarse"; exit 1
+          fi
+
+      - name: Checkout RackPeek
+        uses: actions/checkout@v4
+        with:
+          repository: Timmoth/RackPeek
+          ref: ${{ env.RACKPEEK_REF }}
+          path: rackpeek-src
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Sustituir la demo por el config.yaml del lab
+        run: cp homelab/rackpeek/config.yaml rackpeek-src/RackPeek.Web.Viewer/wwwroot/config/config.yaml
+
+      - name: Compilar el visor WASM
+        run: dotnet publish rackpeek-src/RackPeek.Web.Viewer/RackPeek.Web.Viewer.csproj -c Release -o publish
+
+      - name: Ajustar base href y fallback SPA
+        run: |
+          REPO="${GITHUB_REPOSITORY#*/}"
+          sed -i "s|<base href=\"/\"|<base href=\"/${REPO}/\"|g" publish/wwwroot/index.html
+          cp publish/wwwroot/index.html publish/wwwroot/404.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: publish/wwwroot
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
